@@ -1,0 +1,8 @@
+{
+  "asset": "rotation-board.png",
+  "created": "2026-08-28",
+  "generator": "/opt/fleet/lib/gen-image.sh using factory-image deployment",
+  "prompt": "Editorial neo-brutalist paper-collage still life for a household rotation utility. Three blank chunky chore cards circulate around a bold circular black track on a warm plywood kitchen noticeboard; a small suitcase-shaped paper marker gently lifts one card out of the sequence while the other two continue. Cut paper, masking tape, black marker rules, tactile imperfect edges, crisp side light, slightly top-down 50 mm composition, warm ivory, signal yellow, pool blue, tomato red, charcoal ink. No people, hands, faces, readable text, letters, numbers, logos, brands, gradients, glossy UI, watermark.",
+  "review": "Accepted: three blank cards, clear circular motion, lifted suitcase marker, coherent palette; no text, logos, people, malformed anatomy, or unintended brands.",
+  "license": "Original generated asset for Fair Turn"
+}

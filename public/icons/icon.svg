@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Fair Turn circular card mark">
+  <rect width="512" height="512" rx="72" fill="#FFD447"/>
+  <path d="M398 169a172 172 0 0 0-277-31" fill="none" stroke="#171713" stroke-width="42" stroke-linecap="square"/>
+  <path d="m111 71 13 92 92-13" fill="none" stroke="#171713" stroke-width="42"/>
+  <path d="M114 343a172 172 0 0 0 277 31" fill="none" stroke="#171713" stroke-width="42" stroke-linecap="square"/>
+  <path d="m401 441-13-92-92 13" fill="none" stroke="#171713" stroke-width="42"/>
+  <rect x="171" y="164" width="170" height="184" fill="#FFFDF6" stroke="#171713" stroke-width="20"/>
+  <rect x="209" y="139" width="94" height="34" fill="#77D4E8" stroke="#171713" stroke-width="14"/>
+</svg>

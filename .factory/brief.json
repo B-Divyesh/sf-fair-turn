@@ -1,0 +1,10 @@
+{
+  "slug": "fair-turn",
+  "title": "Fair Turn",
+  "territory": "utilities",
+  "user": "Adults sharing a home who need recurring chores to rotate fairly, account for absences, and make swaps explicit without gamifying or surveilling each other.",
+  "smallest_useful_product": "An offline household PWA that defines chores, cadence, eligible people, vacation dates, equitable rotation, and a QR-shareable current board.",
+  "artifact_class": "pwa-offline",
+  "monetization": "one-time",
+  "constraints": "Local-first sharing with explicit export/import; no collection of relationship data; deletions and neutral language."
+}
