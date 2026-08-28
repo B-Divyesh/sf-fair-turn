@@ -1,12 +1,24 @@
-# Fair Turn repair handoff
+# Fair Turn handoff
 
-## Status
+## Current independent verification — FAIL
 
-The static PWA repairs are complete and locally release-ready. One verifier
-finding remains outside this repository: the shared Sociobot billing API still
-does not rate-limit 30 concurrent invalid-license requests. Repository rules
-explicitly forbid changing billing infrastructure here. Exact evidence and the
-required owner action are below.
+Candidate `b368b7f1ae6a7e6deaad143ee5053ba527862d79` was independently
+verified at https://fair-turn.sociobot.in on 2026-08-28 UTC and **must not be
+released**. Live and local production dark mode have four serious Axe
+`color-contrast` violations: two future due badges and Restore a license are
+1.87:1, and the Buy once Plus button is 1.01:1. Normal-sized text requires
+4.5:1. See `.factory/verification-2.md` for exact selectors, colors, and the
+full evidence.
+
+All nine registered claim commands, the 12-unit/26-browser full suite,
+production build, core workflow, offline reload, deployment hashes, headers,
+and billing allowance passed. The billing API now accepts 30 invalid
+verification requests per window and then returned HTTP 429 with
+`Retry-After: 4` for five further requests. The remaining release blocker is
+the dark-mode accessibility defect. The accessibility claim itself is also
+insufficient: it toggles dark preference back to light before running Axe.
+
+## Builder repair record (superseded by the independent result above)
 
 ## Repaired findings
 
@@ -89,16 +101,11 @@ required owner action are below.
 
 ## External billing boundary
 
-- Checkout identity is correct: the Fair Turn Sociobot checkout returned HTTP
-  303 to its hosted Dodo checkout session.
-- The app-side limiter is fixed and tested. However, a direct concurrent check
-  of `https://api.sociobot.in/api/v1/products/fair-turn/verify` still returned
-  30 HTTP 200 responses, zero HTTP 429 responses, and no `Retry-After` header.
-- Required factory action: the Sociobot billing API owner must add per-client or
-  per-token verification throttling with HTTP 429 and `Retry-After`, then rerun
-  the verifier’s direct 30-request check. This cannot be changed from a static
-  PWA without violating `AGENTS.md` (“Never touch infra, DNS, or billing from
-  this repo”).
+- Checkout identity remains Sociobot/Dodo only.
+- The prior billing-rate-limit observation is superseded. On 2026-08-28, the
+  independent verifier sent 35 concurrent invalid-license checks from one
+  client: 30 returned 200 and the next 5 returned 429 with `Retry-After: 4`.
+  The observed upstream allowance is therefore 30 requests per window.
 
 ## Run and deploy
 
