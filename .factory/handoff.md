@@ -1,5 +1,18 @@
 # Fair Turn v1 handoff
 
+## Independent verification status — FAIL (2026-08-28)
+
+Candidate `94dba0348602d4069df8f36a61c4ef85a7d745c5` was independently checked
+against https://fair-turn.sociobot.in and **must not be released**. The live
+deployment matches the freshly built candidate, but it is blocked by a missing
+`.factory/claims.json`, no required one-click isolated sample demo or
+`.factory/demo.md`, and no observed 429/Retry-After rate limit after 30 rapid
+requests to the Sociobot product verification endpoint. A whitespace-only
+household name also persists an unusable state; live CSP, a real 404 response,
+immutable static caching, and canonical/social metadata are absent. See
+`.factory/verification.md` for exact commands, evidence, successful checks,
+and remediation requirements.
+
 ## What shipped
 
 - A complete Vite + vanilla TypeScript offline PWA for adult household chore
