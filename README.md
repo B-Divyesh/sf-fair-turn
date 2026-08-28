@@ -6,6 +6,9 @@ records swaps without points, streaks, nagging, or surveillance.
 
 Live: <https://fair-turn.sociobot.in>
 
+Try the isolated sample board: <https://fair-turn.sociobot.in/demo>. Demo
+changes use a separate browser database and never alter a real household board.
+
 ## What it does
 
 - Keeps an independent round-robin for every recurring chore.
@@ -46,6 +49,12 @@ accessibility checks:
 npm test
 ```
 
+Run one registered product claim from a clean demo context:
+
+```sh
+npm run test:claims -- --grep @claim:offline-reload
+```
+
 Build exactly what static hosting deploys:
 
 ```sh
@@ -63,6 +72,8 @@ entries for `/privacy` and `/terms`. To inspect it locally, run `npm run preview
 - `src/share.ts` — compact read-only board snapshots
 - `public/sw.js` — versioned app-shell and runtime cache
 - `.factory/design.md` — visual system and generated-asset provenance
+- `.factory/claims.json` — observable product claims and exact test commands
+- `.factory/demo.md` — sample data and storage-isolation contract
 - `.factory/handoff.md` — verification record and release notes
 
 ## Deployment

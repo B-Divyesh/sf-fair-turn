@@ -1,88 +1,97 @@
-# Fair Turn v1 handoff
+# Fair Turn repair handoff
 
-## Independent verification status — FAIL (2026-08-28)
+## Status
 
-Candidate `94dba0348602d4069df8f36a61c4ef85a7d745c5` was independently checked
-against https://fair-turn.sociobot.in and **must not be released**. The live
-deployment matches the freshly built candidate, but it is blocked by a missing
-`.factory/claims.json`, no required one-click isolated sample demo or
-`.factory/demo.md`, and no observed 429/Retry-After rate limit after 30 rapid
-requests to the Sociobot product verification endpoint. A whitespace-only
-household name also persists an unusable state; live CSP, a real 404 response,
-immutable static caching, and canonical/social metadata are absent. See
-`.factory/verification.md` for exact commands, evidence, successful checks,
-and remediation requirements.
+The static PWA repairs are complete and locally release-ready. One verifier
+finding remains outside this repository: the shared Sociobot billing API still
+does not rate-limit 30 concurrent invalid-license requests. Repository rules
+explicitly forbid changing billing infrastructure here. Exact evidence and the
+required owner action are below.
 
-## What shipped
+## Repaired findings
 
-- A complete Vite + vanilla TypeScript offline PWA for adult household chore
-  rotation, with a responsive neo-brutalist “household dispatch board” system.
-- Local onboarding, people management, dated absences, recurring chores (days,
-  weeks, or months), per-chore equitable round-robin assignment, automatic
-  absence skipping, completion advancement, explicit swaps with optional notes,
-  and a chronological local history.
-- A read-only QR/link board snapshot. Snapshot data lives in the URL fragment
-  and includes only household name, current assignments, and due dates.
-- IndexedDB persistence, JSON backup/import, CSV history export, deletion
-  controls, offline/status feedback, empty states, and light/dark themes.
-- A $12 one-time Plus unlock through the Sociobot billing contract. Free is a
-  useful 4-person/6-chore household; Plus removes limits and adds an eight-week
-  outlook. License returns, daily verification caching, offline reconciliation,
-  and paste-to-restore are implemented. Accessibility, data export, and safety
-  controls are never gated.
-- Install manifest, maskable 192/512 icons, generated service-worker precache,
-  static `/privacy` and `/terms` entries, robots/sitemap, README, and MIT license.
-- Original paper-collage hero artwork generated for this product, reviewed, and
-  shipped as a 64 KB WebP with a 136 KB JPEG fallback. Source and prompt sidecar
-  are under `assets/src/`; provenance is in `.factory/design.md`.
+- Added `.factory/claims.json` with nine observable claims. Every listed command
+  passes independently on desktop Chromium and the Pixel 5 profile.
+- Added the one-click `/demo` and `/?demo=1` sample board. Demo data uses the
+  separate `fair-turn-demo` IndexedDB database; leaving demo deletes it and
+  preserves the real `fair-turn` database. The persistent banner includes
+  “Reset demo” and “Start for real”. `.factory/demo.md` documents the contract.
+- Rejects whitespace-only household, person, and chore names with focused,
+  announced errors. A regression test confirms a rejected household is not
+  persisted.
+- Added Azure Static Web Apps response policy: a CSP with exact build-generated
+  hashes, permissions/referrer/content-type headers, immutable one-year asset
+  caching, no-store service-worker caching, explicit route rewrites, and a real
+  HTTP 404 response with a designed page.
+- Added canonical, Open Graph, Twitter, 1200×630 social-image, and 180px touch
+  metadata. Each route now sets a descriptive title and canonical URL.
+- Corrected page heading semantics so every rendered route has one task-level
+  `<h1>` and an ordered outline; the wordmark is no longer the page heading.
+- Added client billing back-pressure: 30 concurrent verification calls coalesce
+  to one request, and upstream `429` responses honor `Retry-After` with clear
+  user feedback. Unit regressions cover both paths.
+- Preserved the versioned service worker, offline shell, current product flows,
+  local storage, export/import, sharing, free limits, and paid-license contract.
 
-## How to verify
+## Verification evidence — 2026-08-28
 
-From a clean checkout with Node.js 20+:
+- Clean install: `npm ci` installed 91 packages; audit reported 0 vulnerabilities.
+- Full gate: `npm test` passed 12 Vitest tests and 26 Playwright tests across
+  desktop Chromium and Pixel 5. The production build is part of this command.
+- Claims: all nine `.factory/claims.json` commands were also run separately;
+  each passed in both browser projects from a fresh context.
+- Type/build: strict `tsc --noEmit` and Vite production build passed. `dist/`
+  contains root, demo, privacy, terms, and 404 documents.
+- Payload: app JS 67.19 KB raw / 23.91 KB gzip; CSS 16.97 KB raw / 4.69 KB
+  gzip; mobile hero WebP 65.52 KB. All are below factory budgets.
+- Browser coverage: setup, rotation, absence skip, swap, completion, history,
+  JSON/CSV export, import recovery, real/demo isolation, free limits, sharing,
+  legal routes, 404, metadata, and offline reload passed on desktop and mobile.
+- Keyboard/accessibility: skip link is first focus, form errors receive focus and
+  are announced, dialog journeys remain keyboard-operable, 390px has no page
+  overflow, reduced motion resolves to `scroll-behavior: auto`, and Playwright
+  Axe found 0 serious/critical issues.
+- Privacy: the full demo mutation/reset flow made zero cross-origin requests.
+  Demo mode skips license storage and verification.
+- Offline/update: controlled offline reload retained the sample board in both
+  browser projects. Regression checks cover versioned precache, clients claim,
+  `SKIP_WAITING`, update discovery, and the visible update notice.
+- Host-policy emulator: `/`, `/demo`, `/privacy`, and `/terms` returned 200 with
+  the hashed CSP; `/not-a-real-route` returned 404 and the designed document;
+  `/assets/rotation-board.webp` returned
+  `Cache-Control: public, max-age=31536000, immutable`; `/sw.js` returned
+  `Cache-Control: no-cache, no-store, must-revalidate`.
+- Factory smoke script: title, `lang=en`, one `<h1>`, `<main>`, image alt text,
+  labeled buttons, and zero console errors passed (`loadMs: 543`).
+- Lighthouse 12.8.2 mobile on `/demo`: performance 98, accessibility 100, best
+  practices 100, SEO 100; LCP 1.7 s, TBT 150 ms, CLS 0.
+- Visual review: 1440×1000 desktop and 390×844 mobile demo captures showed the
+  full board, persistent demo controls, correct stacking, and no horizontal
+  page overflow.
+
+## External billing boundary
+
+- Checkout identity is correct: the Fair Turn Sociobot checkout returned HTTP
+  303 to its hosted Dodo checkout session.
+- The app-side limiter is fixed and tested. However, a direct concurrent check
+  of `https://api.sociobot.in/api/v1/products/fair-turn/verify` still returned
+  30 HTTP 200 responses, zero HTTP 429 responses, and no `Retry-After` header.
+- Required factory action: the Sociobot billing API owner must add per-client or
+  per-token verification throttling with HTTP 429 and `Retry-After`, then rerun
+  the verifier’s direct 30-request check. This cannot be changed from a static
+  PWA without violating `AGENTS.md` (“Never touch infra, DNS, or billing from
+  this repo”).
+
+## Run and deploy
 
 ```sh
 npm ci
 npm test
-```
-
-`npm test` runs six rotation unit tests, the exact production build, and four
-Playwright journeys across desktop Chromium and a Pixel 5 profile. Browser tests
-cover onboarding, assignment, absence skipping, swapping, completion, history,
-390 px/legal rendering, offline reload, and axe serious/critical checks.
-
-Build only:
-
-```sh
+npm run test:claims -- --grep @claim:offline-reload
 npm run build
+/opt/fleet/lib/deploy-static.sh fair-turn /work/repo/dist
 ```
 
-Output lands in `dist/`; `dist/index.html` is the deployment entry point.
-
-## Verification results — 2026-08-28
-
-- `npm test`: pass (6 unit tests and 4 Playwright journeys)
-- TypeScript strict check and production build: pass
-- Production payload: 62.40 KB JS (22.55 KB gzip), 15.82 KB CSS (4.45 KB
-  gzip), 64 KB hero WebP; all under the factory budgets
-- Playwright desktop + mobile journeys: 4/4 pass in the final run
-- Offline reload after service-worker control: pass in desktop and mobile runs
-- axe serious/critical issues: 0 in onboarding, populated app, privacy, and
-  terms paths
-- Lighthouse 12.8.2 mobile (local production preview): performance 98,
-  accessibility 100, best practices 100, SEO 100; LCP 1.7 s, TBT 140 ms,
-  CLS 0. Lighthouse did not emit a lab INP value; TBT remained below the
-  200 ms interaction budget proxy.
-- Browser smoke check: title, `lang="en"`, one `<h1>`, one `<main>`, image alt,
-  and zero console/page errors all pass.
-
-## Known gaps and release notes
-
-- Data is intentionally device-local. Sharing is a point-in-time, read-only
-  snapshot rather than live synchronization; recipients must receive a new link
-  to see later changes.
-- The factory must register the `fair-turn` billing product and set its return
-  URL before launch. No product ID or payment-provider credential is embedded.
-- License verification depends on the Sociobot API when online. A recently
-  verified license remains available offline and is reconciled at most daily.
-- Browser storage can be cleared by device/browser settings, so the app makes
-  JSON backup prominent. There is no remote recovery by design.
+There is no package/consumer surface for this static PWA. Known product
+limitations remain unchanged: data is device-local, shared links are point-in-
+time snapshots, and browser storage can be cleared by the browser or device.

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "demo-sandbox",
+    "claim": "The one-click demo uses sample data and never changes the real household board.",
+    "where": "landing action and demo banner",
+    "test": "npm run test:claims -- --grep @claim:demo-sandbox",
+    "sandbox": "fresh browser context; create real data, change the demo, leave demo, and assert real data is unchanged"
+  },
+  {
+    "id": "rotation-away",
+    "claim": "Completed chores rotate to the next eligible person and skip dated absences.",
+    "where": "landing copy, board, README",
+    "test": "npm run test:claims -- --grep @claim:rotation-away",
+    "sandbox": "fresh /demo board; add an absence spanning the next due date, complete the chore, and assert the absent person is skipped"
+  },
+  {
+    "id": "exports",
+    "claim": "Exports preserve the full board as JSON and the activity log as CSV.",
+    "where": "Own your data, README",
+    "test": "npm run test:claims -- --grep @claim:exports",
+    "sandbox": "fresh /demo board; download and parse both files, asserting sample household, chore count, CSV header, and activity rows"
+  },
+  {
+    "id": "share-snapshot",
+    "claim": "A shared link contains a read-only current-board snapshot without history.",
+    "where": "share dialog, privacy page, README",
+    "test": "npm run test:claims -- --grep @claim:share-snapshot",
+    "sandbox": "fresh /demo board; open its generated fragment URL in a new page and assert assignments appear without actions or history"
+  },
+  {
+    "id": "privacy-local-only",
+    "claim": "Household data stays in the browser unless the user exports or shares it.",
+    "where": "landing facts, footer, settings, privacy page, README",
+    "test": "npm run test:claims -- --grep @claim:privacy-local-only",
+    "sandbox": "fresh /demo board; observe all requests while completing and resetting, and assert every request is same-origin"
+  },
+  {
+    "id": "offline-reload",
+    "claim": "The installed app works offline after the first visit.",
+    "where": "landing facts, offline banner, README",
+    "test": "npm run test:claims -- --grep @claim:offline-reload",
+    "sandbox": "fresh /demo visit; wait for service-worker control, set the context offline, reload, and assert the sample board and offline state"
+  },
+  {
+    "id": "free-limits",
+    "claim": "The free board supports four people and six chores; Plus costs $12 once and removes those limits.",
+    "where": "landing facts, Plus panel, terms, README",
+    "test": "npm run test:claims -- --grep @claim:free-limits",
+    "sandbox": "fresh /demo board; reach four people and six chores, assert both next additions are gated, and verify the displayed one-time offer"
+  },
+  {
+    "id": "installable-pwa",
+    "claim": "Fair Turn installs as a standalone PWA.",
+    "where": "manifest and README",
+    "test": "npm run test:claims -- --grep @claim:installable-pwa",
+    "sandbox": "fresh /demo visit; validate the standalone manifest, maskable icon, and ready service-worker registration"
+  },
+  {
+    "id": "accessible-layout",
+    "claim": "The board supports keyboard use, reduced motion, dark theme, and a 390 px screen.",
+    "where": "README and product interface",
+    "test": "npm run test:claims -- --grep @claim:accessible-layout",
+    "sandbox": "fresh /demo at 390 px with reduced motion and dark preference; assert no overflow, keyboard focus, theme switching, and zero serious/critical Axe findings"
+  }
+]

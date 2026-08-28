@@ -87,6 +87,9 @@ text, letters, numbers, logos, brands, gradients, glossy UI, watermark.”
 Generated with the factory image deployment via `/opt/fleet/lib/gen-image.sh`.
 The output is original for this product. Source PNG and prompt sidecar are kept
 in `assets/src/`; optimized WebP and JPEG fallback are shipped in `public/assets/`.
+The 1200×630 social card is a center crop of that same generated source, with
+no added symbols or third-party material. The 180px touch icon is derived from
+the original hand-authored Fair Turn icon.
 
 Icons are original inline SVG line drawings using the same squared stroke and
 are treated as decorative where adjacent labels already provide the name.
