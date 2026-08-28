@@ -1,7 +1,8 @@
 import QRCode from 'qrcode';
 import './style.css';
 import { addCadence, buildOutlook, dueLabel, formatDate, reconcileChore, todayISO } from './rotation';
-import { emptyHousehold, loadHousehold, saveHousehold, validateImport } from './storage';
+import { emptyHousehold, loadHousehold, saveHousehold, validateImport, deleteDemoHousehold } from './storage';
+import { sampleHousehold } from './demo';
 import { checkoutUrl, FREE_CHORE_LIMIT, FREE_PEOPLE_LIMIT, isUnlocked, acceptLicenseFromUrl, storeAndVerify, verifyLicense } from './license';
 import { readSnapshot, snapshotUrl } from './share';
 import type { Activity, BoardSnapshot, CadenceUnit, Chore } from './types';
@@ -12,6 +13,8 @@ let view: 'board' | 'people' | 'chores' | 'activity' | 'settings' = 'board';
 let unlocked = false;
 let storageError = '';
 let deferredInstall: BeforeInstallPromptEvent | null = null;
+const demoMode = location.pathname === '/demo' || new URLSearchParams(location.search).get('demo') === '1';
+const knownPaths = new Set(['/', '/demo', '/privacy', '/terms']);
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -40,14 +43,15 @@ function appShell(content: string): string {
   const legal = location.pathname === '/privacy' || location.pathname === '/terms';
   return `
     <header class="masthead">
-      <a class="brand" href="/"><h1>Fair<span>Turn</span><i aria-hidden="true">↻</i></h1></a>
+      <a class="brand" href="/" aria-label="Fair Turn home"><span class="brand-title">Fair<span>Turn</span><i aria-hidden="true">↻</i></span></a>
       <div class="header-actions">
         <span class="local-pill"><b aria-hidden="true"></b> Local only</span>
         <button class="icon-button" id="theme-toggle" type="button" aria-label="Change color theme">◐</button>
       </div>
     </header>
     <div class="offline-banner" id="offline-banner" role="status" ${navigator.onLine ? 'hidden' : ''}>Offline — everything still works on this device.</div>
-    ${!legal && data.householdName ? navigation() : ''}
+    ${demoMode && !legal ? demoBanner() : ''}
+    ${!legal && knownPaths.has(location.pathname) && data.householdName ? navigation() : ''}
     <main id="main" tabindex="-1">${content}</main>
     <footer>
       <p><strong>Fair Turn</strong> keeps the board, not the score.</p>
@@ -56,6 +60,10 @@ function appShell(content: string): string {
     </footer>
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <dialog id="dialog"><button class="dialog-close" type="button" data-action="close-dialog" aria-label="Close dialog">×</button><div id="dialog-body"></div></dialog>`;
+}
+
+function demoBanner(): string {
+  return `<aside class="demo-banner" aria-label="Sample data notice"><p><strong>Demo — sample data, nothing is saved</strong></p><div><button class="text-button" data-action="reset-demo">Reset demo</button><button class="button secondary" data-action="start-real">Start for real</button></div></aside>`;
 }
 
 function navigation(): string {
@@ -70,14 +78,16 @@ function welcome(): string {
   return `<section class="welcome" aria-labelledby="welcome-title">
     <div class="welcome-copy">
       <p class="eyebrow">A shared-home utility</p>
-      <h2 id="welcome-title">Whose turn?<br><mark>Already settled.</mark></h2>
-      <p class="lede">Rotate recurring chores fairly. Skip people who are away. Record swaps without points, streaks, or household surveillance.</p>
+      <h1 id="welcome-title">Rotate chores<br><mark>fairly at home.</mark></h1>
+      <p class="lede">For adults sharing a home who need clear turns, dated absences, and agreed swaps.</p>
+      <div class="try-demo"><a class="button primary" href="/demo">Try it with sample data</a><span>See a working household board in one click.</span></div>
       <form id="start-form" class="start-form">
         <div class="field"><label for="household-name">What should we call this household?</label><input id="household-name" name="household" required maxlength="48" autocomplete="organization" placeholder="e.g. Flat 4B"></div>
         <div class="field"><label for="people-names">Who shares the rotation?</label><span class="hint" id="people-hint">Use commas between names. You can change this later.</span><input id="people-names" name="people" required aria-describedby="people-hint" placeholder="Sam, Alex, Jo"></div>
+        <p class="form-error" id="start-error" role="alert" aria-live="polite"></p>
         <button class="button primary" type="submit">Make our board ${icon('plus')}</button>
       </form>
-      <ul class="principles" aria-label="Product principles"><li><b>Local-first.</b> Your home stays on this device.</li><li><b>Neutral.</b> No scores or nagging.</li><li><b>Auditable.</b> Every swap has a record.</li></ul>
+      <ul class="principles" aria-label="Product facts"><li><b>Private.</b> Your board stays in this browser.</li><li><b>Offline.</b> Reopen it without a connection.</li><li><b>Free to start.</b> Four people and six chores.</li></ul>
     </div>
     <figure class="hero-art">
       <picture><source srcset="/assets/rotation-board.webp" type="image/webp"><img src="/assets/rotation-board.jpg" width="960" height="640" fetchpriority="high" decoding="async" alt="Three paper chore cards circling a track while an away marker lifts one out of turn"></picture>
@@ -87,17 +97,17 @@ function welcome(): string {
 }
 
 function board(): string {
-  if (!data.chores.length) return `<section class="section-head"><div><p class="eyebrow">Current board</p><h2>No chores on the board yet.</h2><p class="lede small">Add one recurring job and Fair Turn will assign its first turn.</p></div><button class="button primary" data-action="add-chore">Add a chore ${icon('plus')}</button></section>${howItWorks()}`;
+  if (!data.chores.length) return `<section class="section-head"><div><p class="eyebrow">Current board</p><h1>No chores on the board yet.</h1><p class="lede small">Add one recurring job and Fair Turn will assign its first turn.</p></div><button class="button primary" data-action="add-chore">Add a chore ${icon('plus')}</button></section>${howItWorks()}`;
   const names = new Map(data.people.map((person) => [person.id, person.name]));
   return `<section>
-    <div class="section-head"><div><p class="eyebrow">${escapeHtml(data.householdName)} · current board</p><h2>Here’s the next turn.</h2><p>Assignments advance when a chore is marked done. Away dates are skipped automatically.</p></div><button class="button secondary" data-action="share">Share board ${icon('share')}</button></div>
+    <div class="section-head"><div><p class="eyebrow">${escapeHtml(data.householdName)} · current board</p><h1>Here’s the next turn.</h1><p>Assignments advance when a chore is marked done. Away dates are skipped automatically.</p></div><button class="button secondary" data-action="share">Share board ${icon('share')}</button></div>
     ${storageError ? `<p class="error-box" role="alert">${escapeHtml(storageError)} Changes may not survive a refresh. Export a backup now.</p>` : ''}
     <div class="assignment-grid">${data.chores.map((chore, index) => {
       const due = dueLabel(chore.nextDue);
       const person = chore.currentPersonId ? names.get(chore.currentPersonId) : null;
-      return `<article class="assignment-card" style="--card-index:${index}">
+      return `<article class="assignment-card card-${index % 8}">
         <div class="assignment-top"><span class="turn-label">Turn ${String(index + 1).padStart(2, '0')}</span><span class="due ${due.status}">${escapeHtml(due.text)}</span></div>
-        <h3>${escapeHtml(chore.title)}</h3>
+        <h2 class="item-heading">${escapeHtml(chore.title)}</h2>
         <p class="assigned-name">${person ? escapeHtml(person) : 'No one available'}</p>
         ${person ? '' : '<p class="availability-note">Everyone eligible is away on this due date. Add another person or adjust an absence.</p>'}
         <p class="cadence">Every ${chore.cadenceValue} ${escapeHtml(chore.cadenceUnit.replace(/s$/, chore.cadenceValue === 1 ? '' : 's'))}</p>
@@ -124,9 +134,9 @@ function upgradeStrip(): string {
 
 function peopleView(): string {
   const today = todayISO();
-  return `<section><div class="section-head"><div><p class="eyebrow">People & away</p><h2>Who can take a turn?</h2><p>Away dates only affect assignments due inside that range.</p></div><div class="button-row"><button class="button secondary" data-action="add-person">Add person ${icon('plus')}</button><button class="button primary" data-action="add-absence">Add away dates ${icon('calendar')}</button></div></div>
-    <div class="split-layout"><section><h3>People</h3><ul class="plain-list people-list">${data.people.map((person) => `<li><span class="avatar" aria-hidden="true">${escapeHtml(person.name.slice(0, 1).toUpperCase())}</span><b>${escapeHtml(person.name)}</b><button class="text-button danger-text" data-action="delete-person" data-id="${person.id}">Remove</button></li>`).join('')}</ul></section>
-    <section><h3>Away dates</h3>${data.absences.length ? `<ul class="plain-list absence-list">${[...data.absences].sort((a,b) => a.start.localeCompare(b.start)).map((absence) => {
+  return `<section><div class="section-head"><div><p class="eyebrow">People & away</p><h1>Who can take a turn?</h1><p>Away dates only affect assignments due inside that range.</p></div><div class="button-row"><button class="button secondary" data-action="add-person">Add person ${icon('plus')}</button><button class="button primary" data-action="add-absence">Add away dates ${icon('calendar')}</button></div></div>
+    <div class="split-layout"><section><h2>People</h2><ul class="plain-list people-list">${data.people.map((person) => `<li><span class="avatar" aria-hidden="true">${escapeHtml(person.name.slice(0, 1).toUpperCase())}</span><b>${escapeHtml(person.name)}</b><button class="text-button danger-text" data-action="delete-person" data-id="${person.id}">Remove</button></li>`).join('')}</ul></section>
+    <section><h2>Away dates</h2>${data.absences.length ? `<ul class="plain-list absence-list">${[...data.absences].sort((a,b) => a.start.localeCompare(b.start)).map((absence) => {
       const person = data.people.find((item) => item.id === absence.personId);
       const past = absence.end < today;
       return `<li class="${past ? 'past' : ''}"><div><b>${escapeHtml(person?.name ?? 'Removed person')}</b><span>${formatDate(absence.start)}–${formatDate(absence.end)}</span>${absence.note ? `<small>${escapeHtml(absence.note)}</small>` : ''}</div><button class="text-button danger-text" data-action="delete-absence" data-id="${absence.id}">Remove</button></li>`;
@@ -134,8 +144,8 @@ function peopleView(): string {
 }
 
 function choresView(): string {
-  return `<section><div class="section-head"><div><p class="eyebrow">Rotation rules</p><h2>Recurring chores</h2><p>Each chore keeps its own fair round-robin order.</p></div><button class="button primary" data-action="add-chore">Add a chore ${icon('plus')}</button></div>
-    ${data.chores.length ? `<div class="chore-list">${data.chores.map((chore) => `<article><div><h3>${escapeHtml(chore.title)}</h3><p>Every ${chore.cadenceValue} ${escapeHtml(chore.cadenceUnit)} · ${chore.eligibleIds.length} eligible · next ${formatDate(chore.nextDue)}</p></div><div><button class="text-button" data-action="edit-chore" data-id="${chore.id}">Edit</button><button class="text-button danger-text" data-action="delete-chore" data-id="${chore.id}">Delete</button></div></article>`).join('')}</div>` : '<div class="mini-empty"><p>Nothing recurs yet.</p></div>'}
+  return `<section><div class="section-head"><div><p class="eyebrow">Rotation rules</p><h1>Recurring chores</h1><p>Each chore keeps its own fair round-robin order.</p></div><button class="button primary" data-action="add-chore">Add a chore ${icon('plus')}</button></div>
+    ${data.chores.length ? `<div class="chore-list">${data.chores.map((chore) => `<article><div><h2>${escapeHtml(chore.title)}</h2><p>Every ${chore.cadenceValue} ${escapeHtml(chore.cadenceUnit)} · ${chore.eligibleIds.length} eligible · next ${formatDate(chore.nextDue)}</p></div><div><button class="text-button" data-action="edit-chore" data-id="${chore.id}">Edit</button><button class="text-button danger-text" data-action="delete-chore" data-id="${chore.id}">Delete</button></div></article>`).join('')}</div>` : '<div class="mini-empty"><p>Nothing recurs yet.</p></div>'}
   </section>${howItWorks()}`;
 }
 
@@ -144,7 +154,7 @@ function howItWorks(): string {
 }
 
 function historyView(): string {
-  return `<section><div class="section-head"><div><p class="eyebrow">Local activity</p><h2>An answer when memory differs.</h2><p>This log stays on this device and records actions, never points.</p></div><button class="button secondary" data-action="export-csv">Export CSV ${icon('download')}</button></div>
+  return `<section><div class="section-head"><div><p class="eyebrow">Local activity</p><h1>An answer when memory differs.</h1><p>This log stays on this device and records actions, never points.</p></div><button class="button secondary" data-action="export-csv">Export CSV ${icon('download')}</button></div>
     ${data.activity.length ? `<ol class="history-list">${data.activity.map((item) => `<li><time datetime="${item.at}">${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.at))}</time><div><b>${activityTitle(item)}</b>${item.note ? `<p>${escapeHtml(item.note)}</p>` : ''}</div></li>`).join('')}</ol>` : '<div class="mini-empty"><p>No activity yet. A completion or swap will appear here.</p></div>'}
   </section>`;
 }
@@ -158,30 +168,51 @@ function activityTitle(item: Activity): string {
 }
 
 function settingsView(): string {
-  return `<section><div class="section-head"><div><p class="eyebrow">Own your data</p><h2>Portable by design.</h2><p>Back up the complete household or move it to another device. Imports replace the current board only after confirmation.</p></div></div>
-    <div class="settings-grid"><section><h3>Backup & transfer</h3><p>JSON preserves the full board. CSV is a readable activity ledger.</p><div class="button-stack"><button class="button primary" data-action="export-json">Export backup ${icon('download')}</button><label class="button secondary file-button">Import backup<input id="import-file" type="file" accept="application/json,.json"></label><button class="text-button" data-action="export-csv">Export activity CSV</button></div></section>
-    <section><h3>${unlocked ? 'Plus is active' : 'Fair Turn Plus'}</h3><p>${unlocked ? 'Unlimited people and chores and the eight-week outlook are unlocked on this device.' : 'A $12 one-time purchase unlocks unlimited people and chores and the eight-week outlook. No subscription.'}</p>
+  return `<section><div class="section-head"><div><p class="eyebrow">Own your data</p><h1>Portable by design.</h1><p>Back up the complete household or move it to another device. Imports replace the current board only after confirmation.</p></div></div>
+    <div class="settings-grid"><section><h2>Backup & transfer</h2><p>JSON preserves the full board. CSV is a readable activity ledger.</p><div class="button-stack"><button class="button primary" data-action="export-json">Export backup ${icon('download')}</button><label class="button secondary file-button">Import backup<input id="import-file" type="file" accept="application/json,.json"></label><button class="text-button" data-action="export-csv">Export activity CSV</button></div></section>
+    <section><h2>${unlocked ? 'Plus is active' : 'Fair Turn Plus'}</h2><p>${unlocked ? 'Unlimited people and chores and the eight-week outlook are unlocked on this device.' : 'A $12 one-time purchase unlocks unlimited people and chores and the eight-week outlook. No subscription.'}</p>
       ${unlocked ? '<p class="success-box">License verified or available from a recent cached verification.</p>' : `<a class="button ink" href="${checkoutUrl()}">Buy Fair Turn Plus · $12 once</a><form id="license-form" class="license-form"><label for="license-token">Have a license? Paste it here</label><div><input id="license-token" name="license" required autocomplete="off"><button class="button secondary" type="submit">Verify</button></div><p class="hint">Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license.</p></form>`}
-    </section><section><h3>Storage & privacy</h3><p>The board is stored in this browser’s IndexedDB. Fair Turn has no account, analytics, trackers, or sync server.</p><p><a href="/privacy">Read privacy details</a> · <a href="/terms">Read terms</a></p></section></div>
-    <section class="danger-zone"><h3>Start over</h3><p>Download a backup first. This removes every person, chore, absence, and history entry from this browser.</p><button class="button danger" data-action="reset">Delete this household</button></section>
+    </section><section><h2>Storage & privacy</h2><p>The board is stored in this browser’s IndexedDB. Fair Turn has no account, analytics, trackers, or sync server.</p><p><a href="/privacy">Read privacy details</a> · <a href="/terms">Read terms</a></p></section></div>
+    <section class="danger-zone"><h2>Start over</h2><p>Download a backup first. This removes every person, chore, absence, and history entry from this browser.</p><button class="button danger" data-action="reset">Delete this household</button></section>
   </section>`;
 }
 
 function legalPage(kind: 'privacy' | 'terms'): string {
-  if (kind === 'privacy') return `<article class="legal"><p class="eyebrow">Plain-language policy · August 28, 2026</p><h2>Privacy</h2><p><strong>Fair Turn does not collect household data.</strong> Names, chores, absences, and activity are stored in IndexedDB on your device. There are no accounts, trackers, advertising cookies, or analytics.</p><h3>What leaves your device</h3><p>Nothing leaves automatically. Exported files and QR links leave only when you choose to share them. A shared board link contains a read-only snapshot in the URL fragment; browsers do not send that fragment to our server.</p><p>If you buy or verify Plus, your license token is sent to Sociobot’s billing API. Sociobot/Dodo acts as merchant of record and handles purchase information under its own policies. Fair Turn stores the token and a daily verification result in local storage.</p><h3>Your controls</h3><p>Export data at any time, remove individual items, or use “Delete this household” to erase the board from this browser. Clearing site data also removes it.</p><p><a href="/">Return to Fair Turn</a></p></article>`;
-  return `<article class="legal"><p class="eyebrow">Plain-language terms · August 28, 2026</p><h2>Terms</h2><p>Fair Turn is a household coordination utility provided “as is.” It suggests a rotation based only on the rules entered on this device. Household members remain responsible for agreeing on chores, swaps, safety, and whether a task is appropriate.</p><h3>Respectful use</h3><p>Do not use Fair Turn to coerce, harass, monitor, or assign unsafe work. Names and history can be removed. The product intentionally has no scores, public profiles, or surveillance features.</p><h3>Purchase</h3><p>Fair Turn Plus costs $12 as a one-time purchase for the listed unlocked features. Sociobot/Dodo is the merchant of record and handles payment and refunds. A refunded or revoked license stops unlocking Plus. Core rotation and export remain available.</p><h3>Warranty and liability</h3><p>To the extent permitted by law, the software has no warranty and its authors are not liable for losses arising from its use. These terms do not limit rights that cannot legally be limited.</p><p><a href="/">Return to Fair Turn</a></p></article>`;
+  if (kind === 'privacy') return `<article class="legal"><p class="eyebrow">Plain-language policy · August 28, 2026</p><h1>Privacy</h1><p><strong>Fair Turn does not collect household data.</strong> Names, chores, absences, and activity are stored in IndexedDB on your device. There are no accounts, trackers, advertising cookies, or analytics.</p><h2>What leaves your device</h2><p>Nothing leaves automatically. Exported files and QR links leave only when you choose to share them. A shared board link contains a read-only snapshot in its URL fragment. Browsers do not send that fragment to our server.</p><p>If you buy or verify Plus, your license token is sent to Sociobot’s billing API. Sociobot/Dodo acts as merchant of record and handles purchase information under its own policies. Fair Turn stores the token and a daily verification result in local storage.</p><h2>Your controls</h2><p>Export data at any time, remove individual items, or use “Delete this household” to erase the board from this browser. Clearing site data also removes it.</p><p><a href="/">Return to Fair Turn</a></p></article>`;
+  return `<article class="legal"><p class="eyebrow">Plain-language terms · August 28, 2026</p><h1>Terms</h1><p>Fair Turn is a household coordination utility provided “as is.” It suggests a rotation based only on the rules entered on this device. Household members remain responsible for agreeing on chores, swaps, safety, and whether a task is appropriate.</p><h2>Respectful use</h2><p>Do not use Fair Turn to coerce, harass, monitor, or assign unsafe work. Names and history can be removed. The product intentionally has no scores, public profiles, or surveillance features.</p><h2>Purchase</h2><p>Fair Turn Plus costs $12 as a one-time purchase for the listed features. Sociobot/Dodo is the merchant of record and handles payment and refunds. A refunded or revoked license stops Plus features. Core rotation and export remain available.</p><h2>Warranty and liability</h2><p>To the extent permitted by law, the software has no warranty. Its authors are not liable for losses arising from its use. These terms do not limit rights that cannot legally be limited.</p><p><a href="/">Return to Fair Turn</a></p></article>`;
 }
 
 function sharedBoard(snapshot: BoardSnapshot): string {
-  return `<section class="shared"><p class="eyebrow">Shared snapshot · read only</p><h2>${escapeHtml(snapshot.household)}’s current board</h2><p>Shared ${new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(snapshot.sharedAt))}. This link does not update automatically.</p>
-    <div class="assignment-grid">${snapshot.assignments.map((item, index) => `<article class="assignment-card"><div class="assignment-top"><span class="turn-label">Turn ${String(index + 1).padStart(2, '0')}</span><span class="due upcoming">${formatDate(item.due)}</span></div><h3>${escapeHtml(item.chore)}</h3><p class="assigned-name">${escapeHtml(item.person)}</p></article>`).join('')}</div>
+  return `<section class="shared"><p class="eyebrow">Shared snapshot · read only</p><h1>${escapeHtml(snapshot.household)}’s current board</h1><p>Shared ${new Intl.DateTimeFormat(undefined, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(snapshot.sharedAt))}. This link does not update automatically.</p>
+    <div class="assignment-grid">${snapshot.assignments.map((item, index) => `<article class="assignment-card"><div class="assignment-top"><span class="turn-label">Turn ${String(index + 1).padStart(2, '0')}</span><span class="due upcoming">${formatDate(item.due)}</span></div><h2 class="item-heading">${escapeHtml(item.chore)}</h2><p class="assigned-name">${escapeHtml(item.person)}</p></article>`).join('')}</div>
     <a class="button primary" href="/">Make your own board</a></section>`;
+}
+
+function notFound(): string {
+  return `<section class="not-found"><p class="eyebrow">404 · board not found</p><h1>This turn went missing.</h1><p>The address does not match a Fair Turn page.</p><a class="button primary" href="/">Return to the board</a></section>`;
+}
+
+function updateMetadata(): void {
+  const route = location.pathname;
+  const titles: Record<string, string> = {
+    '/': 'Fair Turn — rotate household chores fairly',
+    '/demo': 'Demo — Fair Turn',
+    '/privacy': 'Privacy — Fair Turn',
+    '/terms': 'Terms — Fair Turn',
+  };
+  const title = demoMode ? titles['/demo'] : titles[route] ?? 'Page not found — Fair Turn';
+  document.title = title;
+  document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.setAttribute('content', title);
+  document.querySelector<HTMLMetaElement>('meta[property="og:url"]')?.setAttribute('content', `https://fair-turn.sociobot.in${demoMode ? '/demo' : knownPaths.has(route) ? route : '/404'}`);
+  const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (canonical) canonical.href = `https://fair-turn.sociobot.in${demoMode ? '/demo' : knownPaths.has(route) ? route : '/404'}`;
 }
 
 function render(): void {
   const snapshot = readSnapshot();
   let content: string;
-  if (location.pathname === '/privacy') content = legalPage('privacy');
+  if (!knownPaths.has(location.pathname)) content = notFound();
+  else if (location.pathname === '/privacy') content = legalPage('privacy');
   else if (location.pathname === '/terms') content = legalPage('terms');
   else if (snapshot) content = sharedBoard(snapshot);
   else if (!data.householdName) content = welcome();
@@ -191,6 +222,7 @@ function render(): void {
   else if (view === 'activity') content = historyView();
   else content = settingsView();
   root.innerHTML = appShell(content);
+  updateMetadata();
   bindEvents();
 }
 
@@ -203,7 +235,7 @@ function toast(message: string): void {
 }
 
 async function persist(message?: string): Promise<void> {
-  try { data = await saveHousehold(data); storageError = ''; }
+  try { data = await saveHousehold(data, demoMode); storageError = ''; }
   catch (error) { storageError = error instanceof Error ? error.message : 'Local save failed.'; }
   render();
   if (message) toast(message);
@@ -277,6 +309,8 @@ async function handleAction(element: HTMLElement): Promise<void> {
   if (action === 'export-json') return exportJson();
   if (action === 'export-csv') return exportCsv();
   if (action === 'reset') return resetHousehold();
+  if (action === 'reset-demo') { data = sampleHousehold(); await persist('Sample board reset.'); return; }
+  if (action === 'start-real') { await deleteDemoHousehold(); location.assign('/'); return; }
   if (action === 'install' && deferredInstall) { await deferredInstall.prompt(); deferredInstall = null; render(); }
 }
 
@@ -292,9 +326,19 @@ function startHousehold(event: SubmitEvent): void {
   event.preventDefault();
   const form = new FormData(event.currentTarget as HTMLFormElement);
   const names = String(form.get('people')).split(',').map((name) => name.trim()).filter(Boolean);
+  const householdName = String(form.get('household')).trim();
+  const householdInput = document.querySelector<HTMLInputElement>('#household-name')!;
+  const error = document.querySelector<HTMLElement>('#start-error')!;
+  if (!householdName) {
+    householdInput.setAttribute('aria-invalid', 'true');
+    householdInput.setAttribute('aria-describedby', 'start-error');
+    error.textContent = 'Enter a household name with at least one visible character.';
+    householdInput.focus();
+    return;
+  }
   if (names.length < 2) return toast('Add at least two names to make a rotation.');
   const limited = unlocked ? names : names.slice(0, FREE_PEOPLE_LIMIT);
-  data = { ...emptyHousehold(), householdName: String(form.get('household')).trim(), people: limited.map((name) => ({ id: id(), name })) };
+  data = { ...emptyHousehold(), householdName, people: limited.map((name) => ({ id: id(), name })) };
   void persist(names.length > limited.length ? `Started with ${FREE_PEOPLE_LIMIT} people; Plus allows larger households.` : 'Your board is ready. Add the first chore.');
 }
 
@@ -304,13 +348,15 @@ function saveChore(event: SubmitEvent): void {
   const form = new FormData(target);
   const eligibleIds = form.getAll('eligible').map(String);
   const error = target.querySelector<HTMLElement>('.form-error')!;
+  const title = String(form.get('title')).trim();
+  if (!title) { error.textContent = 'Enter a chore name with at least one visible character.'; target.querySelector<HTMLInputElement>('#chore-title')?.focus(); return; }
   if (!eligibleIds.length) { error.textContent = 'Choose at least one eligible person.'; return; }
   const existingId = target.dataset.id;
   const existing = data.chores.find((item) => item.id === existingId);
   const due = String(form.get('due'));
   const unit = String(form.get('unit')) as CadenceUnit;
   const chore: Chore = {
-    id: existing?.id ?? id(), title: String(form.get('title')).trim(), cadenceValue: Number(form.get('value')), cadenceUnit: unit,
+    id: existing?.id ?? id(), title, cadenceValue: Number(form.get('value')), cadenceUnit: unit,
     eligibleIds, nextDue: due, lastPersonId: existing?.lastPersonId ?? null,
     currentPersonId: existing?.currentPersonId && eligibleIds.includes(existing.currentPersonId) ? existing.currentPersonId : null,
   };
@@ -357,12 +403,13 @@ function saveSwap(event: SubmitEvent): void {
 
 function openPerson(opener: HTMLElement): void {
   if (!unlocked && data.people.length >= FREE_PEOPLE_LIMIT) { view = 'settings'; render(); toast(`The free board includes ${FREE_PEOPLE_LIMIT} people. Plus removes the limit.`); return; }
-  openDialog(`<form id="person-form" class="dialog-form"><p class="eyebrow">Household</p><h2>Add a person</h2><div class="field"><label for="person-name">Name</label><input id="person-name" name="name" required maxlength="40" autocomplete="off"></div><button class="button primary" type="submit">Add person</button></form>`, opener); bindDialogForm();
+  openDialog(`<form id="person-form" class="dialog-form"><p class="eyebrow">Household</p><h2>Add a person</h2><div class="field"><label for="person-name">Name</label><input id="person-name" name="name" required maxlength="40" autocomplete="off" aria-describedby="person-error"></div><p class="form-error" id="person-error" role="alert" aria-live="polite"></p><button class="button primary" type="submit">Add person</button></form>`, opener); bindDialogForm();
 }
 
 function savePerson(event: SubmitEvent): void {
-  event.preventDefault(); const form = new FormData(event.currentTarget as HTMLFormElement);
-  data.people.push({ id: id(), name: String(form.get('name')).trim() }); closeDialog(); void persist('Person added. Choose their eligible chores when ready.');
+  event.preventDefault(); const target = event.currentTarget as HTMLFormElement; const form = new FormData(target); const name = String(form.get('name')).trim();
+  if (!name) { target.querySelector<HTMLElement>('.form-error')!.textContent = 'Enter a name with at least one visible character.'; target.querySelector<HTMLInputElement>('#person-name')?.focus(); return; }
+  data.people.push({ id: id(), name }); closeDialog(); void persist('Person added. Choose their eligible chores when ready.');
 }
 
 function openAbsence(opener: HTMLElement): void {
@@ -433,7 +480,7 @@ async function importBackup(event: Event): Promise<void> {
 
 async function restoreLicense(event: SubmitEvent): Promise<void> {
   event.preventDefault(); const form = new FormData(event.currentTarget as HTMLFormElement); const button = (event.currentTarget as HTMLFormElement).querySelector<HTMLButtonElement>('button')!;
-  button.disabled = true; button.textContent = 'Checking…'; const verdict = await storeAndVerify(String(form.get('license'))); unlocked = verdict.valid; render(); toast(verdict.valid ? 'Plus unlocked on this device.' : verdict.reason === 'offline' ? 'Could not verify while offline. Try again when connected.' : 'That license is not active for Fair Turn.');
+  button.disabled = true; button.textContent = 'Checking…'; const verdict = await storeAndVerify(String(form.get('license'))); unlocked = verdict.valid; render(); toast(verdict.valid ? 'Plus unlocked on this device.' : verdict.reason === 'offline' ? 'Could not verify while offline. Try again when connected.' : verdict.reason === 'rate_limited' ? 'License checks are busy. Try again in a minute.' : 'That license is not active for Fair Turn.');
 }
 
 function resetHousehold(): void {
@@ -469,11 +516,14 @@ async function registerServiceWorker(): Promise<void> {
 
 async function init(): Promise<void> {
   const savedTheme = localStorage.getItem('fair-turn-theme'); if (savedTheme) document.documentElement.dataset.theme = savedTheme;
-  const licenseArrived = acceptLicenseFromUrl(); unlocked = isUnlocked();
-  try { data = await loadHousehold(); } catch (error) { storageError = error instanceof Error ? error.message : 'Local storage is unavailable.'; }
+  const licenseArrived = demoMode ? false : acceptLicenseFromUrl(); unlocked = demoMode ? false : isUnlocked();
+  try {
+    data = await loadHousehold(demoMode);
+    if (demoMode && !data.householdName) data = await saveHousehold(sampleHousehold(), true);
+  } catch (error) { storageError = error instanceof Error ? error.message : 'Local storage is unavailable.'; }
   render(); setupConnectivity(); void registerServiceWorker();
   if (licenseArrived) toast('License received. Checking it now…');
-  if (navigator.onLine) { const verdict = await verifyLicense(); const changed = unlocked !== verdict.valid; unlocked = verdict.valid; if (changed) render(); if (licenseArrived) toast(verdict.valid ? 'Plus unlocked on this device.' : 'This license is not active for Fair Turn.'); }
+  if (!demoMode && navigator.onLine) { const verdict = await verifyLicense(); const changed = unlocked !== verdict.valid; unlocked = verdict.valid; if (changed) render(); if (licenseArrived) toast(verdict.valid ? 'Plus unlocked on this device.' : 'This license is not active for Fair Turn.'); }
 }
 
 void init();

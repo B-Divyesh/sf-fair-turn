@@ -16,18 +16,9 @@ async function filesIn(directory) {
   return files;
 }
 
-const allFiles = await filesIn(dist);
-const precache = allFiles
-  .filter((file) => !file.endsWith('sw.js') && !file.endsWith('.map'))
-  .map((file) => `/${relative(dist, file).replaceAll('\\', '/')}`);
-const version = createHash('sha256').update(precache.join('|')).digest('hex').slice(0, 10);
-const swPath = join(dist, 'sw.js');
-const source = await readFile(swPath, 'utf8');
-await writeFile(swPath, source.replace('__BUILD_VERSION__', version).replace('__PRECACHE__', JSON.stringify(precache)));
-
-// Keep the critical shell in one cached document. Besides saving two first-load
-// round trips, this makes a just-installed board resilient to engines that apply
-// offline mode before dispatching parser-created subresource requests.
+// Inline the critical shell so parser-created resources remain available when
+// Chromium enters offline mode during a navigation. Exact CSP hashes retain a
+// strict policy without unsafe-inline.
 const indexPath = join(dist, 'index.html');
 let index = await readFile(indexPath, 'utf8');
 const scriptMatch = index.match(/<script type="module" crossorigin src="([^"]+)"><\/script>/);
@@ -38,7 +29,25 @@ const style = await readFile(join(dist, styleMatch[1].slice(1)), 'utf8');
 index = index.replace(scriptMatch[0], `<script type="module">${script}</script>`).replace(styleMatch[0], `<style>${style}</style>`);
 await writeFile(indexPath, index);
 
-for (const route of ['privacy', 'terms']) {
+const digest = (input) => createHash('sha256').update(input).digest('base64');
+const configPath = join(dist, 'staticwebapp.config.json');
+const config = JSON.parse(await readFile(configPath, 'utf8'));
+config.globalHeaders['Content-Security-Policy'] = config.globalHeaders['Content-Security-Policy']
+  .replace("script-src 'self'", `script-src 'self' 'sha256-${digest(script)}'`)
+  .replace("style-src 'self'", `style-src 'self' 'sha256-${digest(style)}'`);
+await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`);
+
+for (const route of ['demo', 'privacy', 'terms']) {
   await mkdir(join(dist, route), { recursive: true });
-  await cp(join(dist, 'index.html'), join(dist, route, 'index.html'));
+  await cp(indexPath, join(dist, route, 'index.html'));
 }
+await cp(indexPath, join(dist, '404.html'));
+
+const allFiles = await filesIn(dist);
+const precache = allFiles
+  .filter((file) => !file.endsWith('sw.js') && !file.endsWith('.map'))
+  .map((file) => `/${relative(dist, file).replaceAll('\\', '/')}`);
+const version = createHash('sha256').update(precache.join('|')).digest('hex').slice(0, 10);
+const swPath = join(dist, 'sw.js');
+const source = await readFile(swPath, 'utf8');
+await writeFile(swPath, source.replace('__BUILD_VERSION__', version).replace('__PRECACHE__', JSON.stringify(precache)));

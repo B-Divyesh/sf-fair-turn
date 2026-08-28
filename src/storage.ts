@@ -1,6 +1,7 @@
 import type { HouseholdData } from './types';
 
 const DATABASE = 'fair-turn';
+const DEMO_DATABASE = 'fair-turn-demo';
 const STORE = 'household';
 const KEY = 'current';
 
@@ -19,9 +20,9 @@ export function emptyHousehold(): HouseholdData {
   };
 }
 
-function openDatabase(): Promise<IDBDatabase> {
+function openDatabase(demo = false): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DATABASE, 1);
+    const request = indexedDB.open(demo ? DEMO_DATABASE : DATABASE, 1);
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE);
     };
@@ -30,8 +31,8 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-export async function loadHousehold(): Promise<HouseholdData> {
-  const database = await openDatabase();
+export async function loadHousehold(demo = false): Promise<HouseholdData> {
+  const database = await openDatabase(demo);
   return new Promise((resolve, reject) => {
     const transaction = database.transaction(STORE, 'readonly');
     const request = transaction.objectStore(STORE).get(KEY);
@@ -41,9 +42,9 @@ export async function loadHousehold(): Promise<HouseholdData> {
   });
 }
 
-export async function saveHousehold(input: HouseholdData): Promise<HouseholdData> {
+export async function saveHousehold(input: HouseholdData, demo = false): Promise<HouseholdData> {
   const data = { ...input, revision: input.revision + 1, updatedAt: new Date().toISOString() };
-  const database = await openDatabase();
+  const database = await openDatabase(demo);
   await new Promise<void>((resolve, reject) => {
     const transaction = database.transaction(STORE, 'readwrite');
     transaction.objectStore(STORE).put(data, KEY);
@@ -52,6 +53,15 @@ export async function saveHousehold(input: HouseholdData): Promise<HouseholdData
   });
   database.close();
   return data;
+}
+
+export function deleteDemoHousehold(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DEMO_DATABASE);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error('Could not clear sample data'));
+    request.onblocked = () => reject(new Error('Close other Fair Turn demo tabs, then try again.'));
+  });
 }
 
 export function validateImport(value: unknown): HouseholdData {
