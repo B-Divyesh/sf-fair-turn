@@ -22,8 +22,11 @@ test('@claim:rotation-away rotates a completed chore and skips a dated absence',
   await page.goto('/demo');
   await expect(page.getByText('Avery', { exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'People & away' }).click();
-  await page.getByRole('button', { name: /Add away dates/ }).click();
-  await page.getByLabel('Who is away?').selectOption({ label: 'Morgan' });
+  const addAway = page.getByRole('button', { name: /Add away dates/ });
+  await addAway.click();
+  const awayPerson = page.getByLabel('Who is away?');
+  if (!await awayPerson.isVisible()) await addAway.click();
+  await awayPerson.selectOption({ label: 'Morgan' });
   const end = new Date(); end.setDate(end.getDate() + 14);
   await page.getByLabel('Through').fill(end.toISOString().slice(0, 10));
   await page.getByRole('button', { name: 'Skip turns in this range' }).click();

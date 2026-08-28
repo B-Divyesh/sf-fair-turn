@@ -45,7 +45,7 @@ await cp(indexPath, join(dist, '404.html'));
 
 const allFiles = await filesIn(dist);
 const precache = allFiles
-  .filter((file) => !file.endsWith('sw.js') && !file.endsWith('.map'))
+  .filter((file) => !file.endsWith('sw.js') && !file.endsWith('.map') && !file.endsWith('staticwebapp.config.json'))
   .map((file) => `/${relative(dist, file).replaceAll('\\', '/')}`);
 const version = createHash('sha256').update(precache.join('|')).digest('hex').slice(0, 10);
 const swPath = join(dist, 'sw.js');

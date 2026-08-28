@@ -22,6 +22,7 @@ describe('release configuration regressions', () => {
     const script = await readFile('scripts/finish-build.mjs', 'utf8');
     expect(script).toContain("['demo', 'privacy', 'terms']");
     expect(script).toContain("join(dist, '404.html')");
+    expect(script).toContain("!file.endsWith('staticwebapp.config.json')");
   });
 
   it('keeps versioned offline caching and the update activation path', async () => {

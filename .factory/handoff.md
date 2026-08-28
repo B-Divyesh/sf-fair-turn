@@ -55,7 +55,8 @@ required owner action are below.
   Demo mode skips license storage and verification.
 - Offline/update: controlled offline reload retained the sample board in both
   browser projects. Regression checks cover versioned precache, clients claim,
-  `SKIP_WAITING`, update discovery, and the visible update notice.
+  `SKIP_WAITING`, update discovery, and the visible update notice. Deployment
+  control files are excluded because Azure intentionally does not serve them.
 - Host-policy emulator: `/`, `/demo`, `/privacy`, and `/terms` returned 200 with
   the hashed CSP; `/not-a-real-route` returned 404 and the designed document;
   `/assets/rotation-board.webp` returned
