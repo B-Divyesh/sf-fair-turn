@@ -37,7 +37,10 @@ export function acceptLicenseFromUrl(): boolean {
 
 export async function storeAndVerify(token: string): Promise<Verdict> {
   localStorage.setItem(KEY, token.trim());
-  localStorage.setItem(VERDICT_KEY, JSON.stringify({ valid: true, checkedAt: 0, reason: 'pending' } satisfies Verdict));
+  // A token returned directly from checkout is optimistically unlocked by
+  // acceptLicenseFromUrl. A manually pasted token has no trusted provenance,
+  // so it remains locked until the billing service confirms it.
+  localStorage.setItem(VERDICT_KEY, JSON.stringify({ valid: false, checkedAt: 0, reason: 'pending' } satisfies Verdict));
   return verifyLicense(true);
 }
 

@@ -49,9 +49,9 @@ Output lands in `dist/`; `dist/index.html` is the deployment entry point.
 
 - `npm test`: pass (6 unit tests and 4 Playwright journeys)
 - TypeScript strict check and production build: pass
-- Production payload: 62.43 KB JS (22.57 KB gzip), 15.82 KB CSS (4.45 KB
+- Production payload: 62.40 KB JS (22.55 KB gzip), 15.82 KB CSS (4.45 KB
   gzip), 64 KB hero WebP; all under the factory budgets
-- Playwright desktop + mobile journeys: 4/4 pass in the pre-handoff run
+- Playwright desktop + mobile journeys: 4/4 pass in the final run
 - Offline reload after service-worker control: pass in desktop and mobile runs
 - axe serious/critical issues: 0 in onboarding, populated app, privacy, and
   terms paths
