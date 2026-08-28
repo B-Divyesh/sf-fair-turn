@@ -63,12 +63,29 @@ required owner action are below.
   `Cache-Control: public, max-age=31536000, immutable`; `/sw.js` returned
   `Cache-Control: no-cache, no-store, must-revalidate`.
 - Factory smoke script: title, `lang=en`, one `<h1>`, `<main>`, image alt text,
-  labeled buttons, and zero console errors passed (`loadMs: 543`).
+  labeled buttons, and zero console errors passed live (`loadMs: 565`).
 - Lighthouse 12.8.2 mobile on `/demo`: performance 98, accessibility 100, best
   practices 100, SEO 100; LCP 1.7 s, TBT 150 ms, CLS 0.
 - Visual review: 1440×1000 desktop and 390×844 mobile demo captures showed the
   full board, persistent demo controls, correct stacking, and no horizontal
   page overflow.
+
+## Deployment evidence
+
+- Repair artifact commit: `2661c92` on `main`, pushed to `origin/main`.
+- Deployed through the work-order static deployment tool to
+  `https://fair-turn.sociobot.in` (Azure deployment
+  `af7228ab-6e5c-47c7-883b-dcb508aec81e`).
+- Fresh live desktop and 390px contexts loaded `/demo` with one `<h1>`, no
+  horizontal overflow, no console errors, and 0 Axe violations.
+- Live offline reload passed with cache `fair-turn-7884d2eb51` and the heading
+  “Here’s the next turn.” visible.
+- Live `/not-a-real-route` returns HTTP 404 and renders “This turn went
+  missing.” `/`, `/demo`, `/privacy`, and `/terms` return HTTP 200 with CSP.
+- Local/live SHA-256 identity matches: `index.html`
+  `69563ab906c3d4f02b5409ac4eb81d07121ec4321f9776b1582ca683d81ccae8`;
+  `sw.js` `23e3b85a56138b99aa489f01b5fcfed66c38382506498d4d610b469c25eaf604`;
+  manifest `f9025577b619b476a74599a808023245ca8fb2bfcbfead52703f3a2cbfc702d7`.
 
 ## External billing boundary
 
