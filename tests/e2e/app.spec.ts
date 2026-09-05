@@ -87,6 +87,6 @@ test('has keyboard focus, route metadata, and a designed not-found page', async 
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /social-card\.jpg$/);
   await page.goto('/not-a-real-route');
   await expect(page).toHaveTitle('Page not found — Fair Turn');
-  await expect(page.getByRole('heading', { level: 1, name: 'This turn went missing.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Page not found.' })).toBeVisible();
   await expect(page.locator('h1')).toHaveCount(1);
 });

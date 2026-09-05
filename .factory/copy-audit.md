@@ -1,6 +1,6 @@
 # Fair Turn copy audit
 
-Audited 2026-08-28. Counts treat hyphenated terms and numerals as one word.
+Audited 2026-09-05. Counts treat hyphenated terms and numerals as one word.
 No sentence exceeds 22 words and none contains a banned marketing word.
 
 | First-screen sentence or label | Words | Flag |
@@ -21,7 +21,7 @@ No sentence exceeds 22 words and none contains a banned marketing word.
 | Free to start. | 3 | — |
 | Four people and six chores. | 5 | — |
 | When someone is away, the turn moves on — without losing the rotation. | 12 | — |
-| Fair Turn keeps the board, not the score. | 8 | — |
+| Fair Turn records chores and swaps, not scores. | 8 | — |
 | The paper-collage artwork was generated for Fair Turn. | 8 | — |
 | No household data leaves this device unless you export or share it. | 12 | — |
 

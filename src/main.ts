@@ -54,7 +54,7 @@ function appShell(content: string): string {
     ${!legal && knownPaths.has(location.pathname) && data.householdName ? navigation() : ''}
     <main id="main" tabindex="-1">${content}</main>
     <footer>
-      <p><strong>Fair Turn</strong> keeps the board, not the score.</p>
+      <p><strong>Fair Turn</strong> records chores and swaps, not scores.</p>
       <nav aria-label="Legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><button class="text-button" data-action="install" ${deferredInstall ? '' : 'hidden'}>Install app</button></nav>
       <p class="disclosure">The paper-collage artwork was generated for Fair Turn. No household data leaves this device unless you export or share it.</p>
     </footer>
@@ -123,13 +123,13 @@ function board(): string {
 
 function outlook(): string {
   const rows = buildOutlook(data).slice(0, 24);
-  return `<section class="outlook"><div class="section-head compact"><div><p class="eyebrow">Unlocked · 8-week outlook</p><h2>See the hand-offs ahead.</h2></div></div>
+  return `<section class="outlook"><div class="section-head compact"><div><p class="eyebrow">8-week outlook</p><h2>Upcoming assignments</h2></div></div>
     ${rows.length ? `<div class="outlook-list">${rows.map((item) => `<div><time datetime="${item.due}">${formatDate(item.due)}</time><b>${escapeHtml(item.choreTitle)}</b><span>${escapeHtml(item.personName)}</span></div>`).join('')}</div>` : '<p>Add a chore to see the outlook.</p>'}
   </section>`;
 }
 
 function upgradeStrip(): string {
-  return `<aside class="upgrade-strip"><div><p class="eyebrow">Keep it for good</p><h2>Fair Turn Plus · $12 once</h2><p>Unlimited people and chores, plus an eight-week rotation outlook. Core rotation, sharing, accessibility, and exports stay free.</p></div><div class="upgrade-actions"><a class="button ink" href="${checkoutUrl()}">Buy once</a><button class="text-button" data-view="settings">Restore a license</button></div></aside>`;
+  return `<aside class="upgrade-strip"><div><p class="eyebrow">One-time purchase</p><h2>Fair Turn Plus · $12 once</h2><p>Unlimited people and chores, plus an eight-week rotation outlook. Core rotation, sharing, accessibility, and exports stay free.</p></div><div class="upgrade-actions"><a class="button ink" href="${checkoutUrl()}">Buy once</a><button class="text-button" data-view="settings">Restore a license</button></div></aside>`;
 }
 
 function peopleView(): string {
@@ -150,11 +150,11 @@ function choresView(): string {
 }
 
 function howItWorks(): string {
-  return `<section class="explainer"><p class="eyebrow">The rule is simple</p><h2>Fairness you can inspect.</h2><ol><li><span>01</span><div><b>Take the next eligible person.</b><p>Each chore remembers its own order.</p></div></li><li><span>02</span><div><b>Skip a dated absence.</b><p>The absent person stays in the future rotation.</p></div></li><li><span>03</span><div><b>Write down exceptions.</b><p>Swaps and completions stay in local history.</p></div></li></ol></section>`;
+  return `<section class="explainer"><p class="eyebrow">How it works</p><h2>How chores rotate</h2><ol><li><span>01</span><div><b>Take the next eligible person.</b><p>Each chore remembers its own order.</p></div></li><li><span>02</span><div><b>Skip a dated absence.</b><p>The absent person stays in the future rotation.</p></div></li><li><span>03</span><div><b>Write down exceptions.</b><p>Swaps and completions stay in local history.</p></div></li></ol></section>`;
 }
 
 function historyView(): string {
-  return `<section><div class="section-head"><div><p class="eyebrow">Local activity</p><h1>An answer when memory differs.</h1><p>This log stays on this device and records actions, never points.</p></div><button class="button secondary" data-action="export-csv">Export CSV ${icon('download')}</button></div>
+  return `<section><div class="section-head"><div><p class="eyebrow">Local activity</p><h1>Review activity history.</h1><p>This log stays on this device and records actions, never points.</p></div><button class="button secondary" data-action="export-csv">Export CSV ${icon('download')}</button></div>
     ${data.activity.length ? `<ol class="history-list">${data.activity.map((item) => `<li><time datetime="${item.at}">${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.at))}</time><div><b>${activityTitle(item)}</b>${item.note ? `<p>${escapeHtml(item.note)}</p>` : ''}</div></li>`).join('')}</ol>` : '<div class="mini-empty"><p>No activity yet. A completion or swap will appear here.</p></div>'}
   </section>`;
 }
@@ -168,7 +168,7 @@ function activityTitle(item: Activity): string {
 }
 
 function settingsView(): string {
-  return `<section><div class="section-head"><div><p class="eyebrow">Own your data</p><h1>Portable by design.</h1><p>Back up the complete household or move it to another device. Imports replace the current board only after confirmation.</p></div></div>
+  return `<section><div class="section-head"><div><p class="eyebrow">Own your data</p><h1>Back up and move your board.</h1><p>Back up the complete household or move it to another device. Imports replace the current board only after confirmation.</p></div></div>
     <div class="settings-grid"><section><h2>Backup & transfer</h2><p>JSON preserves the full board. CSV is a readable activity ledger.</p><div class="button-stack"><button class="button primary" data-action="export-json">Export backup ${icon('download')}</button><label class="button secondary file-button">Import backup<input id="import-file" type="file" accept="application/json,.json"></label><button class="text-button" data-action="export-csv">Export activity CSV</button></div></section>
     <section><h2>${unlocked ? 'Plus is active' : 'Fair Turn Plus'}</h2><p>${unlocked ? 'Unlimited people and chores and the eight-week outlook are unlocked on this device.' : 'A $12 one-time purchase unlocks unlimited people and chores and the eight-week outlook. No subscription.'}</p>
       ${unlocked ? '<p class="success-box">License verified or available from a recent cached verification.</p>' : `<a class="button ink" href="${checkoutUrl()}">Buy Fair Turn Plus · $12 once</a><form id="license-form" class="license-form"><label for="license-token">Have a license? Paste it here</label><div><input id="license-token" name="license" required autocomplete="off"><button class="button secondary" type="submit">Verify</button></div><p class="hint">Sociobot/Dodo is the merchant of record. Refunds are handled there and revoke the license.</p></form>`}
@@ -189,7 +189,7 @@ function sharedBoard(snapshot: BoardSnapshot): string {
 }
 
 function notFound(): string {
-  return `<section class="not-found"><p class="eyebrow">404 · board not found</p><h1>This turn went missing.</h1><p>The address does not match a Fair Turn page.</p><a class="button primary" href="/">Return to the board</a></section>`;
+  return `<section class="not-found"><p class="eyebrow">404 · board not found</p><h1>Page not found.</h1><p>The address does not match a Fair Turn page.</p><a class="button primary" href="/">Return to the board</a></section>`;
 }
 
 function updateMetadata(): void {
