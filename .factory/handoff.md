@@ -1,122 +1,133 @@
 # Fair Turn handoff
 
-## Current independent verification — FAIL
+## Repair 2 result — ready for independent verification
 
-Candidate `b368b7f1ae6a7e6deaad143ee5053ba527862d79` was independently
-verified at https://fair-turn.sociobot.in on 2026-08-28 UTC and **must not be
-released**. Live and local production dark mode have four serious Axe
-`color-contrast` violations: two future due badges and Restore a license are
-1.87:1, and the Buy once Plus button is 1.01:1. Normal-sized text requires
-4.5:1. See `.factory/verification-2.md` for exact selectors, colors, and the
-full evidence.
+The dark-mode accessibility blocker reported in
+`.factory/verification-2.md` is fixed and deployed.
 
-All nine registered claim commands, the 12-unit/26-browser full suite,
-production build, core workflow, offline reload, deployment hashes, headers,
-and billing allowance passed. The billing API now accepts 30 invalid
-verification requests per window and then returned HTTP 429 with
-`Retry-After: 4` for five further requests. The remaining release blocker is
-the dark-mode accessibility defect. The accessibility claim itself is also
-insufficient: it toggles dark preference back to light before running Axe.
+- **Implementation and deployed artifact:** `fea2210592d4f878ec99e45b1dbd394fbb505945`
+- **Deployment:** static app deployment `bc1f92d3-57d5-4bbe-8ad7-2532e6ec9e66`
+- **Live URL:** <https://fair-turn.sociobot.in>
+- This handoff is committed after the implementation commit as a documentation
+  record only.
 
-## Builder repair record (superseded by the independent result above)
+## What changed
 
-## Repaired findings
+- Future `Due …` badges now use charcoal text on the bright blue surface in
+  both themes. This repairs both affected future-due cards.
+- The Plus strip now lets the normal `.ink` button use its theme-aware
+  foreground, and explicitly gives its “Restore a license” action charcoal
+  text. This repairs the other two reported contrast failures.
+- `@claim:accessible-layout` now runs Axe while the page is actually dark,
+  then switches through the visible theme control and runs the same serious /
+  critical check in light mode. It checks computed color scheme, not an
+  implementation attribute.
+- Replaced remaining decorative task labels with direct labels such as “How
+  chores rotate”, “Review activity history”, “Back up and move your board”,
+  and “Page not found.” The copy audit was refreshed.
+- Added the required verb-first catalog description and public billing-offer
+  metadata for the existing $12 one-time Fair Turn Plus offer.
 
-- Added `.factory/claims.json` with nine observable claims. Every listed command
-  passes independently on desktop Chromium and the Pixel 5 profile.
-- Added the one-click `/demo` and `/?demo=1` sample board. Demo data uses the
-  separate `fair-turn-demo` IndexedDB database; leaving demo deletes it and
-  preserves the real `fair-turn` database. The persistent banner includes
-  “Reset demo” and “Start for real”. `.factory/demo.md` documents the contract.
-- Rejects whitespace-only household, person, and chore names with focused,
-  announced errors. A regression test confirms a rejected household is not
-  persisted.
-- Added Azure Static Web Apps response policy: a CSP with exact build-generated
-  hashes, permissions/referrer/content-type headers, immutable one-year asset
-  caching, no-store service-worker caching, explicit route rewrites, and a real
-  HTTP 404 response with a designed page.
-- Added canonical, Open Graph, Twitter, 1200×630 social-image, and 180px touch
-  metadata. Each route now sets a descriptive title and canonical URL.
-- Corrected page heading semantics so every rendered route has one task-level
-  `<h1>` and an ordered outline; the wordmark is no longer the page heading.
-- Added client billing back-pressure: 30 concurrent verification calls coalesce
-  to one request, and upstream `429` responses honor `Retry-After` with clear
-  user feedback. Unit regressions cover both paths.
-- Preserved the versioned service worker, offline shell, current product flows,
-  local storage, export/import, sharing, free limits, and paid-license contract.
+## Current verification
 
-## Verification evidence — 2026-08-28
+### Clean local setup and claims
 
-- Clean install: `npm ci` installed 91 packages; audit reported 0 vulnerabilities.
-- Full gate: `npm test` passed 12 Vitest tests and 26 Playwright tests across
-  desktop Chromium and Pixel 5. The production build is part of this command.
-- Claims: all nine `.factory/claims.json` commands were also run separately;
-  each passed in both browser projects from a fresh context.
-- Type/build: strict `tsc --noEmit` and Vite production build passed. `dist/`
-  contains root, demo, privacy, terms, and 404 documents.
-- Payload: app JS 67.19 KB raw / 23.91 KB gzip; CSS 16.97 KB raw / 4.69 KB
-  gzip; mobile hero WebP 65.52 KB. All are below factory budgets.
-- Browser coverage: setup, rotation, absence skip, swap, completion, history,
-  JSON/CSV export, import recovery, real/demo isolation, free limits, sharing,
-  legal routes, 404, metadata, and offline reload passed on desktop and mobile.
-- Keyboard/accessibility: skip link is first focus, form errors receive focus and
-  are announced, dialog journeys remain keyboard-operable, 390px has no page
-  overflow, reduced motion resolves to `scroll-behavior: auto`, and Playwright
-  Axe found 0 serious/critical issues.
-- Privacy: the full demo mutation/reset flow made zero cross-origin requests.
-  Demo mode skips license storage and verification.
-- Offline/update: controlled offline reload retained the sample board in both
-  browser projects. Regression checks cover versioned precache, clients claim,
-  `SKIP_WAITING`, update discovery, and the visible update notice. Deployment
-  control files are excluded because Azure intentionally does not serve them.
-- Host-policy emulator: `/`, `/demo`, `/privacy`, and `/terms` returned 200 with
-  the hashed CSP; `/not-a-real-route` returned 404 and the designed document;
-  `/assets/rotation-board.webp` returned
-  `Cache-Control: public, max-age=31536000, immutable`; `/sw.js` returned
-  `Cache-Control: no-cache, no-store, must-revalidate`.
-- Factory smoke script: title, `lang=en`, one `<h1>`, `<main>`, image alt text,
-  labeled buttons, and zero console errors passed live (`loadMs: 565`).
-- Lighthouse 12.8.2 mobile on `/demo`: performance 98, accessibility 100, best
-  practices 100, SEO 100; LCP 1.7 s, TBT 150 ms, CLS 0.
-- Visual review: 1440×1000 desktop and 390×844 mobile demo captures showed the
-  full board, persistent demo controls, correct stacking, and no horizontal
-  page overflow.
+After `npm ci` (91 packages; 0 audit vulnerabilities):
 
-## Deployment evidence
+- Every individually documented command in `.factory/claims.json` was run in
+  the repair session from a clean install: demo isolation, away-date rotation,
+  JSON/CSV export, snapshot sharing, privacy, offline reload, free limits,
+  installability, and accessible layout.
+- Final `npm run test:claims` passed all 18 browser executions (each of the
+  nine claims in desktop Chromium and Pixel 5).
+- Final `npm test` passed 12 Vitest tests and all 26 Playwright tests, after a
+  production build. This includes normal, invalid, boundary, recovery,
+  keyboard, mobile, legal-route, 404, service-worker, and offline paths.
+- Final `npm run build` passed. Built application JS is 67.16 kB raw / 23.85
+  kB gzip; CSS is 16.98 kB raw / 4.67 kB gzip. Both remain below the static
+  budgets.
 
-- Repair artifact commit: `2661c92` on `main`, pushed to `origin/main`.
-- Deployed through the work-order static deployment tool to
-  `https://fair-turn.sociobot.in` (Azure deployment
-  `af7228ab-6e5c-47c7-883b-dcb508aec81e`).
-- Fresh live desktop and 390px contexts loaded `/demo` with one `<h1>`, no
-  horizontal overflow, no console errors, and 0 Axe violations.
-- Live offline reload passed with cache `fair-turn-7884d2eb51` and the heading
-  “Here’s the next turn.” visible.
-- Live `/not-a-real-route` returns HTTP 404 and renders “This turn went
-  missing.” `/`, `/demo`, `/privacy`, and `/terms` return HTTP 200 with CSP.
-- Local/live SHA-256 identity matches: `index.html`
-  `69563ab906c3d4f02b5409ac4eb81d07121ec4321f9776b1582ca683d81ccae8`;
-  `sw.js` `23e3b85a56138b99aa489f01b5fcfed66c38382506498d4d610b469c25eaf604`;
-  manifest `f9025577b619b476a74599a808023245ca8fb2bfcbfead52703f3a2cbfc702d7`.
+### Live HTTPS checks
 
-## External billing boundary
+Fresh, separate desktop (1440 px) and phone (Pixel 5, 393 px) contexts loaded
+the live root in dark mode. Before scrolling, both showed:
 
-- Checkout identity remains Sociobot/Dodo only.
-- The prior billing-rate-limit observation is superseded. On 2026-08-28, the
-  independent verifier sent 35 concurrent invalid-license checks from one
-  client: 30 returned 200 and the next 5 returned 429 with `Retry-After: 4`.
-  The observed upstream allowance is therefore 30 requests per window.
+- Job: “Rotate chores fairly at home.”
+- Audience: adults sharing a home who need clear turns, dated absences, and
+  agreed swaps.
+- First action: “Try it with sample data.”
 
-## Run and deploy
+Each context entered the one-click demo. It showed the persistent “Demo —
+sample data, nothing is saved” label, Reset demo control, and three populated
+assignment cards. Both had no console or page errors, no horizontal overflow,
+and zero serious/critical Axe findings while `color-scheme: dark` was active.
+
+The factory verifier also passed against live `/demo`: HTTP 200, `Demo — Fair
+Turn` title, `lang=en`, one `<h1>`, `<main>`, no images without alt text, no
+unlabelled buttons, and no console errors (`loadMs: 561`).
+
+The live demo mutation/reset/start-for-real check confirmed that resetting the
+three-card sample board preserves a separately created real board. Its request
+log had no cross-origin requests. Controlled live offline reload was also
+exercised after service-worker control; it retained the sample board and
+showed the offline notice. The final candidate claim suite repeats both
+isolation and offline outcomes against the production build.
+
+`/`, `/demo`, `/privacy`, and `/terms` return HTTP 200. An invalid path returns
+HTTP 404 and renders the designed “Page not found.” route. Live headers include
+CSP, HSTS, strict referrer policy, and `nosniff`.
+
+Final local/live SHA-256 identity:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `index.html` | `4b7f0eefd2c9d0ef49e8d838e7f97984f69b256676c92e2c9563d610f7a236a2` |
+| `sw.js` | `00e09aa3b4d850f7818a602046f4da29421cb6d4e9a8ee6201fed58d89c5d37d` |
+| `manifest.webmanifest` | `f9025577b619b476a74599a808023245ca8fb2bfcbfead52703f3a2cbfc702d7` |
+
+### Earlier findings and their disposition
+
+- The nine-claim registry, isolated `/demo` storage namespace, first-screen
+  sample action, whitespace validation, response policy, real 404, immutable
+  asset caching, and route metadata reported in `.factory/verification.md`
+  remain covered by the final suite and live route/header checks.
+- The prior upstream billing observation remains 30 invalid verification calls
+  allowed per window followed by HTTP 429 with `Retry-After: 4`. The product is
+  static and this repair did not change its Sociobot billing client, so that
+  external allowance was not needlessly stressed again.
+- The only failures in `.factory/verification-2.md` were dark contrast and its
+  insufficient dark-theme claim. Both are now directly tested and passed live.
+
+## Commands
 
 ```sh
 npm ci
 npm test
-npm run test:claims -- --grep @claim:offline-reload
+npm run test:claims
 npm run build
 /opt/fleet/lib/deploy-static.sh fair-turn /work/repo/dist
 ```
 
-There is no package/consumer surface for this static PWA. Known product
-limitations remain unchanged: data is device-local, shared links are point-in-
-time snapshots, and browser storage can be cleared by the browser or device.
+## Known limits and external boundaries
+
+- The board is deliberately device-local. Clearing browser site data removes
+  it unless the household exports a backup. Shared links are read-only,
+  point-in-time snapshots.
+- Fair Turn Plus remains a $12 one-time Sociobot/Dodo offer. Checkout and
+  entitlement validation depend on the registered Sociobot billing product;
+  no provider credential or payment SDK is embedded here. Public offer metadata
+  is at `/work/.evidence/billing-offer.json`.
+- The free core, data export, sharing, accessibility, and safety behaviour are
+  not gated.
+- A fresh Lighthouse CLI run was attempted twice but the worker’s bundled
+  Chromium could not be launched by the CLI. The prior independently recorded
+  mobile result (performance 98, accessibility 100, best practices 100, SEO
+  100) remains historical evidence; final payload sizes and all browser checks
+  above were measured successfully.
+
+## Product metadata
+
+- `.factory/catalog-description.txt` and
+  `/work/.evidence/catalog-description.txt` both contain: “Rotate shared
+  household chores fairly, skip absences, and record agreed swaps offline.”
+- The description is 87 characters, verb-first, and has no marketing claim.
