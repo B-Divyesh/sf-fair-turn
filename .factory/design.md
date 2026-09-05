@@ -19,13 +19,14 @@ are selected from the operating-system preference, with an explicit toggle.
 - Ink / text: `#171713`; dark `#F7F0DF`
 - Muted ink: `#5B594F`; dark `#BDB8AA`
 - Signal yellow / primary: `#FFD447` with `#171713` text
-- Pool blue / secondary: `#77D4E8` with `#171713` text
+- Pool blue / secondary: `#77D4E8` with `#171713` text in both themes
 - Done green: `#277A48` (pale backing `#D9F2D8`)
 - Attention orange: `#A64B16` (pale backing `#FFE0C2`)
 - Remove red: `#A52B32` (pale backing `#FFDADD`)
 - Rules and focus: current ink; focus uses a 3 px cyan/yellow double treatment
 
-All text/background combinations target WCAG AA at 4.5:1; pale semantic colors
+All text/background combinations target WCAG AA at 4.5:1; bright blue and
+yellow surfaces always use charcoal text in both themes. Pale semantic colors
 are backings, never the sole state indicator.
 
 ## Type and spacing

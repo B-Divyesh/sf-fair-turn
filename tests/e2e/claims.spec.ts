@@ -128,10 +128,13 @@ test('@claim:accessible-layout supports keyboard, reduced motion, dark theme, an
   await page.goto('/demo');
   expect(await page.evaluate(() => document.documentElement.scrollWidth === document.documentElement.clientWidth)).toBe(true);
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior)).toBe('auto');
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('dark');
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeFocused();
+  const darkResults = await new AxeBuilder({ page: page as never }).analyze();
+  expect(darkResults.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
   await page.getByRole('button', { name: 'Change color theme' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  const results = await new AxeBuilder({ page: page as never }).analyze();
-  expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe('light');
+  const lightResults = await new AxeBuilder({ page: page as never }).analyze();
+  expect(lightResults.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
 });

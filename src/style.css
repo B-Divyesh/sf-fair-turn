@@ -155,7 +155,7 @@ input::placeholder { color: color-mix(in srgb, var(--muted) 85%, transparent); o
 .due { padding: 6px 8px; border: 1px solid currentColor; font-size: .78rem; font-weight: 850; }
 .due.overdue { color: var(--orange); background: var(--orange-bg); }
 .due.today { color: #171713; background: var(--yellow); }
-.due.upcoming { color: var(--ink); background: var(--blue); }
+.due.upcoming { color: #171713; background: var(--blue); }
 .assignment-card .item-heading { margin-bottom: 4px; color: var(--muted); font-family: var(--body); font-size: 1rem; letter-spacing: 0; }
 .assigned-name { margin: 0 0 6px; font-family: var(--display); font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1; letter-spacing: -.045em; overflow-wrap: anywhere; }
 .cadence { margin: 0 0 24px; color: var(--muted); font-size: .92rem; }
@@ -168,7 +168,7 @@ input::placeholder { color: color-mix(in srgb, var(--muted) 85%, transparent); o
 .upgrade-strip h2 { font-size: clamp(2rem, 5vw, 3rem); }
 .upgrade-strip p { margin-bottom: 0; }
 .upgrade-actions { display: flex; flex-direction: column; align-items: stretch; text-align: center; }
-.upgrade-strip .ink { color: #f4eedf; }
+.upgrade-strip .text-button { color: #171713; }
 .outlook { margin-top: 72px; }
 .outlook-list { border-top: var(--rule); }
 .outlook-list > div { display: grid; grid-template-columns: 160px 1fr 1fr; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--ink); font-variant-numeric: tabular-nums; }
