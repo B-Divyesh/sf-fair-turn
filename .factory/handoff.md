@@ -131,3 +131,30 @@ npm run build
   `/work/.evidence/catalog-description.txt` both contain: “Rotate shared
   household chores fairly, skip absences, and record agreed swaps offline.”
 - The description is 87 characters, verb-first, and has no marketing claim.
+
+## Independent verification 3 — PASS
+
+Independent QA on 2026-09-05 reviewed implementation
+`fea2210592d4f878ec99e45b1dbd394fbb505945` and this documentation commit
+`5c9e677d3a6ca47ebc17c4e400133773402dadd9`.
+
+- Fresh desktop and Pixel 5 live contexts confirmed the pre-scroll job,
+  audience, one-click demo action, populated sample board, persistent demo
+  notice, reset/start-for-real isolation, no errors, and no overflow.
+- The verifier ran `npm ci`, `npm run build`, `npm test` (12 unit and 26
+  browser tests), plus all nine declared claim commands individually from a
+  detached clean worktree. All 18 claim executions passed.
+- Fresh live dark-mode Axe on desktop and phone, then light mode after the
+  visible toggle, had zero serious or critical findings. Keyboard skip-link,
+  reduced motion, offline reload, privacy request logging, normal/invalid/
+  boundary recovery, legal routes, 404, links, headers, and candidate hashes
+  were all checked.
+- The earlier billing rate-limit finding is verified live: 30 invalid checks
+  were accepted, then 5 returned 429 with `Retry-After: 4`.
+
+Result: **PASS — zero findings and zero untested claims.** Full evidence is
+in `.factory/verification-3.md` and `/work/.evidence/qa-report.md`.
+
+The worker-image Lighthouse CLI launch limitation remains environmental only;
+it is not a public product claim. This verification independently measured
+the required browser basics and payload budgets.
