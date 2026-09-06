@@ -2,8 +2,8 @@
 
 ## Result
 
-**PASS — all six strict-review findings are repaired and all nine public claims
-have complete outcome tests.**
+**PASS — latest independent verification (2026-09-06) found zero findings and
+zero untested public claims.**
 
 - Implementation SHA: `f01235d377ee8b0d6602ee623f46f8ef21348d9d`
 - Prior report-only baseline: `2bd7e4ead73d5ad3d8e9df6d84ed4820fb0b40b0`
@@ -11,6 +11,23 @@ have complete outcome tests.**
 - Verified and deployed: 2026-09-06 UTC
 
 This handoff is the report-only change after the implementation SHA above.
+
+## Independent verification 4
+
+- Verification report: `.factory/verification-4.md`
+- Implementation SHA reviewed: `f01235d377ee8b0d6602ee623f46f8ef21348d9d`
+- Documentation SHA reviewed: `17c43dfd07c06f04103d15995f117bcc996dd139`
+- Clean checkout: `npm ci` passed; `npm test` passed 12 unit and 28 browser
+  tests; `npm run build` produced `dist/`.
+- All nine declared claim commands passed separately in desktop and mobile
+  contexts. Fresh live desktop and 393×851 phone checks proved the job,
+  audience, sample action, populated/resettable isolated demo, real-board
+  preservation, normal/recovery paths, keyboard focus, dark/reduced-motion
+  accessibility, offline reload, route titles, designed 404, links, and
+  response headers.
+- Live `index.html`, `sw.js`, and `manifest.webmanifest` match the clean
+  implementation build byte-for-byte. Details and evidence locations are in
+  `.factory/verification-4.md`.
 
 ## Repairs
 
