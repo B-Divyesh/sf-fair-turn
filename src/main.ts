@@ -44,6 +44,12 @@ function appShell(content: string): string {
   return `
     <header class="masthead">
       <a class="brand" href="/" aria-label="Fair Turn home"><span class="brand-title">Fair<span>Turn</span><i aria-hidden="true">↻</i></span></a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="/demo">Demo</a>
+        <a href="/#how-it-works">How it works</a>
+        <a href="/#pricing">Pricing</a>
+        <a href="/privacy">Privacy</a>
+      </nav>
       <div class="header-actions">
         <span class="local-pill"><b aria-hidden="true"></b> Local only</span>
         <button class="icon-button" id="theme-toggle" type="button" aria-label="Change color theme">◐</button>
@@ -56,8 +62,10 @@ function appShell(content: string): string {
     <footer>
       <p><strong>Fair Turn</strong> records chores and swaps, not scores.</p>
       <nav aria-label="Legal"><a href="/privacy">Privacy</a><a href="/terms">Terms</a><button class="text-button" data-action="install" ${deferredInstall ? '' : 'hidden'}>Install app</button></nav>
+      <p class="build-credit">Built by Param Factory · Version 1.0.0</p>
       <p class="disclosure">The paper-collage artwork was generated for Fair Turn. No household data leaves this device unless you export or share it.</p>
     </footer>
+    <div id="view-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <dialog id="dialog"><button class="dialog-close" type="button" data-action="close-dialog" aria-label="Close dialog">×</button><div id="dialog-body"></div></dialog>`;
 }
@@ -77,22 +85,40 @@ function navigation(): string {
 function welcome(): string {
   return `<section class="welcome" aria-labelledby="welcome-title">
     <div class="welcome-copy">
-      <p class="eyebrow">A shared-home utility</p>
+      <p class="eyebrow">Household chore rotation</p>
       <h1 id="welcome-title">Rotate chores<br><mark>fairly at home.</mark></h1>
       <p class="lede">For adults sharing a home who need clear turns, dated absences, and agreed swaps.</p>
       <div class="try-demo"><a class="button primary" href="/demo">Try it with sample data</a><span>See a working household board in one click.</span></div>
+      <ul class="principles" aria-label="Product facts"><li><b>Private.</b> Your board stays in this browser.</li><li><b>Offline.</b> Reopen it without a connection.</li><li><b>Free to start.</b> Four people and six chores.</li></ul>
       <form id="start-form" class="start-form">
         <div class="field"><label for="household-name">What should we call this household?</label><input id="household-name" name="household" required maxlength="48" autocomplete="organization" placeholder="e.g. Flat 4B"></div>
         <div class="field"><label for="people-names">Who shares the rotation?</label><span class="hint" id="people-hint">Use commas between names. You can change this later.</span><input id="people-names" name="people" required aria-describedby="people-hint" placeholder="Sam, Alex, Jo"></div>
         <p class="form-error" id="start-error" role="alert" aria-live="polite"></p>
         <button class="button primary" type="submit">Make our board ${icon('plus')}</button>
       </form>
-      <ul class="principles" aria-label="Product facts"><li><b>Private.</b> Your board stays in this browser.</li><li><b>Offline.</b> Reopen it without a connection.</li><li><b>Free to start.</b> Four people and six chores.</li></ul>
     </div>
     <figure class="hero-art">
       <picture><source srcset="/assets/rotation-board.webp" type="image/webp"><img src="/assets/rotation-board.jpg" width="960" height="640" fetchpriority="high" decoding="async" alt="Three paper chore cards circling a track while an away marker lifts one out of turn"></picture>
       <figcaption>When someone is away, the turn moves on — without losing the rotation.</figcaption>
     </figure>
+  </section>
+  <section class="landing-preview" aria-labelledby="preview-title">
+    <div class="landing-section-copy"><p class="eyebrow">Working board preview</p><h2 id="preview-title">See who takes each turn.</h2><p>The sample board starts with three chores, a dated absence, and recent activity.</p><a class="text-link" href="/demo">Open the sample board →</a></div>
+    <div class="preview-board" aria-label="Sample assignments">
+      <article><span>Due today</span><h3>Take bins out</h3><strong>Avery</strong></article>
+      <article><span>Due in two days</span><h3>Clean the bathroom</h3><strong>Riley</strong></article>
+      <article><span>Due in four days</span><h3>Water shared plants</h3><strong>Avery</strong></article>
+    </div>
+  </section>
+  ${howItWorks('how-it-works')}
+  <section class="privacy-summary" aria-labelledby="privacy-summary-title">
+    <p class="eyebrow">Privacy</p><h2 id="privacy-summary-title">What Fair Turn does not do</h2>
+    <ul><li>No accounts, tracking, scores, or public profiles.</li><li>No household data leaves automatically.</li><li>No one sees a board unless you export or share it.</li></ul>
+    <a class="text-link" href="/privacy">Read the privacy details →</a>
+  </section>
+  <section class="landing-pricing" id="pricing" aria-labelledby="pricing-title">
+    <div><p class="eyebrow">One-time purchase</p><h2 id="pricing-title">Fair Turn Plus · $12 once</h2><p>Plus removes the four-person and six-chore limits. It also shows every assignment in the next eight weeks.</p><p>Core rotation, sharing, accessibility, and exports stay free.</p></div>
+    <div><a class="button ink" href="${checkoutUrl()}">Buy Fair Turn Plus · $12 once</a><p>Have a license? Start a real board, then restore it under Own your data.</p></div>
   </section>`;
 }
 
@@ -122,7 +148,7 @@ function board(): string {
 }
 
 function outlook(): string {
-  const rows = buildOutlook(data).slice(0, 24);
+  const rows = buildOutlook(data);
   return `<section class="outlook"><div class="section-head compact"><div><p class="eyebrow">8-week outlook</p><h2>Upcoming assignments</h2></div></div>
     ${rows.length ? `<div class="outlook-list">${rows.map((item) => `<div><time datetime="${item.due}">${formatDate(item.due)}</time><b>${escapeHtml(item.choreTitle)}</b><span>${escapeHtml(item.personName)}</span></div>`).join('')}</div>` : '<p>Add a chore to see the outlook.</p>'}
   </section>`;
@@ -149,8 +175,8 @@ function choresView(): string {
   </section>${howItWorks()}`;
 }
 
-function howItWorks(): string {
-  return `<section class="explainer"><p class="eyebrow">How it works</p><h2>How chores rotate</h2><ol><li><span>01</span><div><b>Take the next eligible person.</b><p>Each chore remembers its own order.</p></div></li><li><span>02</span><div><b>Skip a dated absence.</b><p>The absent person stays in the future rotation.</p></div></li><li><span>03</span><div><b>Write down exceptions.</b><p>Swaps and completions stay in local history.</p></div></li></ol></section>`;
+function howItWorks(sectionId = ''): string {
+  return `<section class="explainer"${sectionId ? ` id="${sectionId}"` : ''}><p class="eyebrow">How it works</p><h2>How chores rotate</h2><ol><li><span>01</span><div><b>Take the next eligible person.</b><p>Each chore remembers its own order.</p></div></li><li><span>02</span><div><b>Skip a dated absence.</b><p>The absent person stays in the future rotation.</p></div></li><li><span>03</span><div><b>Write down exceptions.</b><p>Swaps and completions stay in local history.</p></div></li></ol></section>`;
 }
 
 function historyView(): string {
@@ -208,7 +234,30 @@ function updateMetadata(): void {
   if (canonical) canonical.href = `https://fair-turn.sociobot.in${demoMode ? '/demo' : knownPaths.has(route) ? route : '/404'}`;
 }
 
-function render(): void {
+function focusedElementSelector(): string | null {
+  const active = document.activeElement as HTMLElement | null;
+  if (!active || active === document.body) return null;
+  if (active.id) return `#${CSS.escape(active.id)}`;
+  if (active.dataset.view) return `[data-view="${CSS.escape(active.dataset.view)}"]`;
+  if (active.dataset.action) {
+    const action = `[data-action="${CSS.escape(active.dataset.action)}"]`;
+    return active.dataset.id ? `${action}[data-id="${CSS.escape(active.dataset.id)}"]` : action;
+  }
+  return null;
+}
+
+function focusViewHeading(announcement?: string): void {
+  const heading = document.querySelector<HTMLElement>('#main h1');
+  if (!heading) return;
+  heading.tabIndex = -1;
+  heading.focus({ preventScroll: true });
+  heading.scrollIntoView({ block: 'start' });
+  const status = document.querySelector<HTMLElement>('#view-status');
+  if (status) status.textContent = announcement ?? `${heading.textContent?.trim() ?? 'Section'} opened.`;
+}
+
+function render(options: { focusHeading?: boolean; announcement?: string } = {}): void {
+  const focusSelector = options.focusHeading ? null : focusedElementSelector();
   const snapshot = readSnapshot();
   let content: string;
   if (!knownPaths.has(location.pathname)) content = notFound();
@@ -224,6 +273,13 @@ function render(): void {
   root.innerHTML = appShell(content);
   updateMetadata();
   bindEvents();
+  if (options.focusHeading) focusViewHeading(options.announcement);
+  else if (focusSelector) document.querySelector<HTMLElement>(focusSelector)?.focus({ preventScroll: true });
+}
+
+function changeView(nextView: typeof view): void {
+  view = nextView;
+  render({ focusHeading: true });
 }
 
 function toast(message: string): void {
@@ -261,10 +317,10 @@ function personChecks(selected: string[] = data.people.map((person) => person.id
 function choreDialog(chore?: Chore): string {
   const due = chore?.nextDue ?? todayISO();
   return `<form id="chore-form" class="dialog-form" data-id="${chore?.id ?? ''}"><p class="eyebrow">${chore ? 'Edit rotation' : 'New rotation'}</p><h2>${chore ? 'Adjust this chore' : 'Add a recurring chore'}</h2>
-    <div class="field"><label for="chore-title">Chore name</label><input id="chore-title" name="title" required maxlength="60" value="${escapeHtml(chore?.title ?? '')}" placeholder="e.g. Take bins out"></div>
+    <div class="field"><label for="chore-title">Chore name</label><input id="chore-title" name="title" required maxlength="60" value="${escapeHtml(chore?.title ?? '')}" placeholder="e.g. Take bins out" aria-describedby="chore-error"></div>
     <div class="field"><label for="chore-due">Next due date</label><input id="chore-due" name="due" type="date" required value="${due}"></div>
     <fieldset><legend>How often?</legend><div class="cadence-input"><input aria-label="Cadence amount" name="value" type="number" min="1" max="365" required value="${chore?.cadenceValue ?? 1}"><select aria-label="Cadence unit" name="unit"><option value="days" ${chore?.cadenceUnit === 'days' ? 'selected' : ''}>days</option><option value="weeks" ${!chore || chore.cadenceUnit === 'weeks' ? 'selected' : ''}>weeks</option><option value="months" ${chore?.cadenceUnit === 'months' ? 'selected' : ''}>months</option></select></div></fieldset>
-    ${personChecks(chore?.eligibleIds)}<p class="form-error" aria-live="polite"></p><button class="button primary" type="submit">${chore ? 'Save changes' : 'Assign first turn'}</button></form>`;
+    ${personChecks(chore?.eligibleIds)}<p class="form-error" id="chore-error" role="alert" aria-live="polite"></p><button class="button primary" type="submit">${chore ? 'Save changes' : 'Assign first turn'}</button></form>`;
 }
 
 function bindEvents(): void {
@@ -275,9 +331,7 @@ function bindEvents(): void {
     localStorage.setItem('fair-turn-theme', next);
   });
   document.querySelectorAll<HTMLElement>('[data-view]').forEach((element) => element.addEventListener('click', () => {
-    view = element.dataset.view as typeof view;
-    render();
-    document.querySelector('#main')?.scrollIntoView();
+    changeView(element.dataset.view as typeof view);
   }));
   document.querySelectorAll<HTMLElement>('[data-action]').forEach((element) => element.addEventListener('click', () => void handleAction(element)));
   document.querySelector<HTMLFormElement>('#start-form')?.addEventListener('submit', startHousehold);
@@ -294,7 +348,7 @@ async function handleAction(element: HTMLElement): Promise<void> {
   const itemId = element.dataset.id;
   if (action === 'close-dialog') return closeDialog();
   if (action === 'add-chore') {
-    if (!unlocked && data.chores.length >= FREE_CHORE_LIMIT) { view = 'settings'; render(); return toast(`The free board includes ${FREE_CHORE_LIMIT} chores. Plus removes the limit.`); }
+    if (!unlocked && data.chores.length >= FREE_CHORE_LIMIT) { changeView('settings'); return toast(`The free board includes ${FREE_CHORE_LIMIT} chores. Plus removes the limit.`); }
     openDialog(choreDialog(), element); bindDialogForm(); return;
   }
   if (action === 'edit-chore' && itemId) { openDialog(choreDialog(data.chores.find((item) => item.id === itemId)), element); bindDialogForm(); return; }
@@ -328,6 +382,7 @@ function startHousehold(event: SubmitEvent): void {
   const names = String(form.get('people')).split(',').map((name) => name.trim()).filter(Boolean);
   const householdName = String(form.get('household')).trim();
   const householdInput = document.querySelector<HTMLInputElement>('#household-name')!;
+  const peopleInput = document.querySelector<HTMLInputElement>('#people-names')!;
   const error = document.querySelector<HTMLElement>('#start-error')!;
   if (!householdName) {
     householdInput.setAttribute('aria-invalid', 'true');
@@ -336,7 +391,13 @@ function startHousehold(event: SubmitEvent): void {
     householdInput.focus();
     return;
   }
-  if (names.length < 2) return toast('Add at least two names to make a rotation.');
+  if (names.length < 2) {
+    peopleInput.setAttribute('aria-invalid', 'true');
+    peopleInput.setAttribute('aria-describedby', 'people-hint start-error');
+    error.textContent = 'Enter at least two names separated by commas.';
+    peopleInput.focus();
+    return;
+  }
   const limited = unlocked ? names : names.slice(0, FREE_PEOPLE_LIMIT);
   data = { ...emptyHousehold(), householdName, people: limited.map((name) => ({ id: id(), name })) };
   void persist(names.length > limited.length ? `Started with ${FREE_PEOPLE_LIMIT} people; Plus allows larger households.` : 'Your board is ready. Add the first chore.');
@@ -349,8 +410,21 @@ function saveChore(event: SubmitEvent): void {
   const eligibleIds = form.getAll('eligible').map(String);
   const error = target.querySelector<HTMLElement>('.form-error')!;
   const title = String(form.get('title')).trim();
-  if (!title) { error.textContent = 'Enter a chore name with at least one visible character.'; target.querySelector<HTMLInputElement>('#chore-title')?.focus(); return; }
-  if (!eligibleIds.length) { error.textContent = 'Choose at least one eligible person.'; return; }
+  if (!title) {
+    error.textContent = 'Enter a chore name with at least one visible character.';
+    const input = target.querySelector<HTMLInputElement>('#chore-title');
+    input?.setAttribute('aria-invalid', 'true');
+    input?.focus();
+    return;
+  }
+  if (!eligibleIds.length) {
+    error.textContent = 'Choose at least one eligible person.';
+    const checkbox = target.querySelector<HTMLInputElement>('input[name="eligible"]');
+    checkbox?.setAttribute('aria-invalid', 'true');
+    checkbox?.setAttribute('aria-describedby', 'chore-error');
+    checkbox?.focus();
+    return;
+  }
   const existingId = target.dataset.id;
   const existing = data.chores.find((item) => item.id === existingId);
   const due = String(form.get('due'));
@@ -402,24 +476,36 @@ function saveSwap(event: SubmitEvent): void {
 }
 
 function openPerson(opener: HTMLElement): void {
-  if (!unlocked && data.people.length >= FREE_PEOPLE_LIMIT) { view = 'settings'; render(); toast(`The free board includes ${FREE_PEOPLE_LIMIT} people. Plus removes the limit.`); return; }
+  if (!unlocked && data.people.length >= FREE_PEOPLE_LIMIT) { changeView('settings'); toast(`The free board includes ${FREE_PEOPLE_LIMIT} people. Plus removes the limit.`); return; }
   openDialog(`<form id="person-form" class="dialog-form"><p class="eyebrow">Household</p><h2>Add a person</h2><div class="field"><label for="person-name">Name</label><input id="person-name" name="name" required maxlength="40" autocomplete="off" aria-describedby="person-error"></div><p class="form-error" id="person-error" role="alert" aria-live="polite"></p><button class="button primary" type="submit">Add person</button></form>`, opener); bindDialogForm();
 }
 
 function savePerson(event: SubmitEvent): void {
   event.preventDefault(); const target = event.currentTarget as HTMLFormElement; const form = new FormData(target); const name = String(form.get('name')).trim();
-  if (!name) { target.querySelector<HTMLElement>('.form-error')!.textContent = 'Enter a name with at least one visible character.'; target.querySelector<HTMLInputElement>('#person-name')?.focus(); return; }
+  if (!name) {
+    target.querySelector<HTMLElement>('.form-error')!.textContent = 'Enter a name with at least one visible character.';
+    const input = target.querySelector<HTMLInputElement>('#person-name');
+    input?.setAttribute('aria-invalid', 'true');
+    input?.focus();
+    return;
+  }
   data.people.push({ id: id(), name }); closeDialog(); void persist('Person added. Choose their eligible chores when ready.');
 }
 
 function openAbsence(opener: HTMLElement): void {
-  openDialog(`<form id="absence-form" class="dialog-form"><p class="eyebrow">Temporary exception</p><h2>Add away dates</h2><div class="field"><label for="away-person">Who is away?</label><select id="away-person" name="person">${data.people.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join('')}</select></div><div class="date-pair"><div class="field"><label for="away-start">From</label><input id="away-start" name="start" type="date" value="${todayISO()}" required></div><div class="field"><label for="away-end">Through</label><input id="away-end" name="end" type="date" value="${todayISO()}" required></div></div><div class="field"><label for="away-note">Note <span>(optional)</span></label><input id="away-note" name="note" maxlength="80" placeholder="e.g. work trip"></div><p class="form-error" aria-live="polite"></p><button class="button primary" type="submit">Skip turns in this range</button></form>`, opener); bindDialogForm();
+  openDialog(`<form id="absence-form" class="dialog-form"><p class="eyebrow">Temporary exception</p><h2>Add away dates</h2><div class="field"><label for="away-person">Who is away?</label><select id="away-person" name="person">${data.people.map((person) => `<option value="${person.id}">${escapeHtml(person.name)}</option>`).join('')}</select></div><div class="date-pair"><div class="field"><label for="away-start">From</label><input id="away-start" name="start" type="date" value="${todayISO()}" required></div><div class="field"><label for="away-end">Through</label><input id="away-end" name="end" type="date" value="${todayISO()}" required aria-describedby="absence-error"></div></div><div class="field"><label for="away-note">Note <span>(optional)</span></label><input id="away-note" name="note" maxlength="80" placeholder="e.g. work trip"></div><p class="form-error" id="absence-error" role="alert" aria-live="polite"></p><button class="button primary" type="submit">Skip turns in this range</button></form>`, opener); bindDialogForm();
 }
 
 function saveAbsence(event: SubmitEvent): void {
   event.preventDefault(); const target = event.currentTarget as HTMLFormElement; const form = new FormData(target);
   const start = String(form.get('start')); const end = String(form.get('end'));
-  if (end < start) { target.querySelector<HTMLElement>('.form-error')!.textContent = 'The end date must be on or after the start date.'; return; }
+  if (end < start) {
+    target.querySelector<HTMLElement>('.form-error')!.textContent = 'The end date must be on or after the start date.';
+    const endInput = target.querySelector<HTMLInputElement>('#away-end');
+    endInput?.setAttribute('aria-invalid', 'true');
+    endInput?.focus();
+    return;
+  }
   const before = new Map(data.chores.map((chore) => [chore.id, chore.currentPersonId]));
   data.absences.push({ id: id(), personId: String(form.get('person')), start, end, note: String(form.get('note')).trim() });
   reconcileAll();
@@ -473,8 +559,11 @@ async function importBackup(event: Event): Promise<void> {
   try {
     const imported = validateImport(JSON.parse(await file.text()));
     if (!confirm(`Replace this board with the backup for “${imported.householdName}”? This cannot be undone unless you exported the current board.`)) return;
-    data = imported; await persist('Backup imported.'); view = 'board'; render();
-  } catch (error) { toast(error instanceof Error ? error.message : 'Could not import that backup.'); }
+    data = imported;
+    view = 'board';
+    await persist('Backup imported.');
+    focusViewHeading('Backup imported. Current board opened.');
+  } catch { toast('Could not import this file. Choose a Fair Turn JSON backup and try again.'); }
   input.value = '';
 }
 
@@ -522,6 +611,9 @@ async function init(): Promise<void> {
     if (demoMode && !data.householdName) data = await saveHousehold(sampleHousehold(), true);
   } catch (error) { storageError = error instanceof Error ? error.message : 'Local storage is unavailable.'; }
   render(); setupConnectivity(); void registerServiceWorker();
+  if (location.hash === '#how-it-works' || location.hash === '#pricing') {
+    requestAnimationFrame(() => document.querySelector(location.hash)?.scrollIntoView());
+  }
   if (licenseArrived) toast('License received. Checking it now…');
   if (!demoMode && navigator.onLine) { const verdict = await verifyLicense(); const changed = unlocked !== verdict.valid; unlocked = verdict.valid; if (changed) render(); if (licenseArrived) toast(verdict.valid ? 'Plus unlocked on this device.' : 'This license is not active for Fair Turn.'); }
 }

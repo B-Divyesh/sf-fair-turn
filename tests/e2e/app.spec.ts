@@ -46,18 +46,53 @@ test('creates a board, skips an absence, records a swap, and works offline', asy
   await context.setOffline(false);
 });
 
-test('renders legal pages and a 390px onboarding path accessibly', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test('renders legal pages and puts the complete first read in a 393px phone viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 851 });
   await page.goto('/privacy');
   await expect(page.getByRole('heading', { name: 'Privacy' })).toBeVisible();
   await expect(page.locator('h1')).toHaveCount(1);
   await page.goto('/terms');
   await expect(page.getByRole('heading', { name: 'Terms' })).toBeVisible();
   await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1, name: 'Rotate chores fairly at home.' })).toBeVisible();
+  await expect(page.getByText('For adults sharing a home who need clear turns, dated absences, and agreed swaps.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Try it with sample data' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Make our board/ })).toBeVisible();
+  await expect(page.locator('.principles li')).toHaveCount(3);
+  for (const selector of ['#welcome-title', '.welcome .lede', '.try-demo a', '.principles']) {
+    const box = await page.locator(selector).boundingBox();
+    expect(box, `${selector} should have a layout box`).not.toBeNull();
+    expect(box!.y + box!.height, `${selector} should end before the first viewport ends`).toBeLessThanOrEqual(851);
+  }
+  await expect(page.getByRole('navigation', { name: 'Primary' }).getByRole('link')).toHaveCount(4);
+  await expect(page.getByRole('heading', { name: 'See who takes each turn.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'How chores rotate' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What Fair Turn does not do' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Fair Turn Plus · $12 once' })).toBeVisible();
+  await expect(page.getByText('Built by Param Factory · Version 1.0.0')).toBeVisible();
+  for (const link of await page.getByRole('navigation', { name: 'Legal' }).getByRole('link').all()) {
+    const box = await link.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(393);
   const results = await new AxeBuilder({ page: page as never }).analyze();
   expect(results.violations.filter((violation) => ['serious', 'critical'].includes(violation.impact ?? ''))).toEqual([]);
+});
+
+test('keeps the board intact and explains how to recover from malformed JSON', async ({ page }) => {
+  await page.goto('/demo');
+  await page.getByRole('button', { name: 'Own your data' }).click();
+  await page.locator('#import-file').setInputFiles({
+    name: 'broken.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{not valid json'),
+  });
+  await expect(page.locator('#toast')).toHaveText('Could not import this file. Choose a Fair Turn JSON backup and try again.');
+  await page.getByRole('button', { name: 'Board' }).click();
+  await expect(page.getByText('Juniper House · current board')).toBeVisible();
+  await expect(page.locator('.assignment-card')).toHaveCount(3);
+  await expect(page.locator('.assignment-card').first().getByText('Avery', { exact: true })).toBeVisible();
 });
 
 test('rejects a whitespace household name without persisting a broken board', async ({ page }) => {
@@ -77,6 +112,11 @@ test('rejects a whitespace household name without persisting a broken board', as
     };
   }));
   expect(stored).toBeNull();
+  await page.getByLabel('What should we call this household?').fill('Flat 4B');
+  await page.getByLabel('Who shares the rotation?').fill('Sam');
+  await page.getByRole('button', { name: /Make our board/ }).click();
+  await expect(page.getByRole('alert')).toHaveText('Enter at least two names separated by commas.');
+  await expect(page.getByLabel('Who shares the rotation?')).toBeFocused();
 });
 
 test('has keyboard focus, route metadata, and a designed not-found page', async ({ page }) => {

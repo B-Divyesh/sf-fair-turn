@@ -49,8 +49,9 @@ and 64. Reading measures stop at 68 characters.
 - Pressed controls lose their offset shadow and translate 2 px, like pressing
   a physical label maker key. New/reassigned slips enter from 8 px below over
   180 ms. Toasts arrive from their edge of origin.
-- Mobile stacks all columns, keeps actions full-width where helpful, and
-  replaces wide tables with definition-list rows. Nothing essential is dropped.
+- Mobile puts the job, audience, sample action, and three product facts before
+  the illustration. It stacks all columns, keeps actions full-width where
+  helpful, and replaces wide tables with definition-list rows.
 
 ## Motion policy
 
