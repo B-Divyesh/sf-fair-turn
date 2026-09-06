@@ -2,15 +2,32 @@
 
 ## Result
 
-**PASS — latest independent verification (2026-09-06) found zero findings and
-zero untested public claims.**
+**PASS — review 2 (2026-09-06) found zero findings and zero untested public
+claims.**
 
 - Implementation SHA: `f01235d377ee8b0d6602ee623f46f8ef21348d9d`
-- Prior report-only baseline: `2bd7e4ead73d5ad3d8e9df6d84ed4820fb0b40b0`
+- Documentation baseline reviewed: `8c4921ed2dc45b455b3a8f9df18fe6e1fb34573c`
 - Live URL: <https://fair-turn.sociobot.in>
 - Verified and deployed: 2026-09-06 UTC
 
 This handoff is the report-only change after the implementation SHA above.
+
+## Review 2
+
+- Report: `.factory/review-2.md`
+- A detached clean checkout of `f01235d` passed `npm ci`, `npm test`, and
+  `npm run build`; all nine exact registered claim commands passed separately
+  in desktop and mobile projects.
+- Fresh live desktop and 393×851 phone contexts stated the job, audience, and
+  sample action before scrolling. The live demo populated, retained its
+  persistent sample label, rotated, reset, and did not alter a separate real
+  board.
+- Live normal, invalid, boundary, and recovery paths worked. Keyboard focus,
+  dark/reduced-motion accessibility, offline reload, legal routes, designed
+  404, links, and response headers passed. `verify-url.sh` passed for `/` and
+  `/demo`.
+- Clean `index.html`, `sw.js`, and `manifest.webmanifest` hashes match the live
+  artifact. Evidence is in `/work/.evidence/fair-turn-review-2-*`.
 
 ## Independent verification 4
 
