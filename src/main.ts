@@ -300,6 +300,11 @@ async function persist(message?: string): Promise<void> {
 function openDialog(content: string, opener?: HTMLElement): void {
   const dialog = document.querySelector<HTMLDialogElement>('#dialog')!;
   document.querySelector<HTMLDivElement>('#dialog-body')!.innerHTML = content;
+  const heading = dialog.querySelector<HTMLElement>('h2');
+  if (heading) {
+    heading.id = 'dialog-title';
+    dialog.setAttribute('aria-labelledby', heading.id);
+  }
   dialog.dataset.opener = opener?.id ?? '';
   dialog.showModal();
   dialog.querySelector<HTMLElement>('input, select, button:not(.dialog-close)')?.focus();

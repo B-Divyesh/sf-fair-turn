@@ -266,6 +266,7 @@ test('@claim:accessible-layout supports keyboard, reduced motion, dark theme, an
   await expect(page.getByRole('button', { name: /Add a chore/ })).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByLabel('Chore name')).toBeFocused();
+  await expect(page.getByRole('dialog', { name: 'Add a recurring chore' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: /Add a chore/ })).toBeFocused();
   const darkResults = await new AxeBuilder({ page: page as never }).analyze();

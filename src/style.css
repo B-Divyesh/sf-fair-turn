@@ -223,6 +223,7 @@ input::placeholder { color: color-mix(in srgb, var(--muted) 85%, transparent); o
 .settings-grid p { color: var(--muted); }
 .file-button { position: relative; overflow: hidden; }
 .file-button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.file-button:has(input:focus-visible) { outline: 3px solid var(--blue); outline-offset: 3px; box-shadow: 0 0 0 5px var(--ink); }
 .license-form { margin-top: 24px; }
 .license-form > div { display: flex; gap: 8px; margin-top: 8px; }
 .license-form input { min-width: 0; }
